@@ -153,6 +153,22 @@ export class MerchantCatalog {
       );
     return result;
   }
+  async setContact(phone: string) {
+    const whatsapp = phone.trim();
+    if (/[^\d\s+().-]/.test(whatsapp) || !/^\d{10,15}$/.test(whatsapp.replace(/\D/g, "")))
+      throw new ApiError(400, "Informe um telefone válido com DDD (10 a 15 dígitos).");
+    return this.updateProfile({ whatsapp });
+  }
+  async setCatalogMode(tipo_catalogo: "produtos" | "servicos") {
+    return this.updateProfile({ tipo_catalogo });
+  }
+  private async updateProfile(fields: { whatsapp?: string; tipo_catalogo?: "produtos" | "servicos" }) {
+    this.assertCurrent();
+    const shop = await this.client.request<Shop>(`lojas/${this.shop}/`, "PATCH", fields);
+    this.assertCurrent();
+    if (shop.id !== this.shop) throw new ApiError(0, "A loja retornada não corresponde à sua conta.");
+    return shop;
+  }
   async setStoreType(type: number | null) {
     this.assertCurrent();
     const result = await this.client.request<Shop>(

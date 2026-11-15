@@ -14,7 +14,7 @@ import { StoreStatus } from "./StoreStatus";
 import { StoreThemeProvider } from "./themeContext";
 import { useBrandHeader } from "./useStoreBrand";
 import { shopTheme } from "./theme";
-import { Button, Notice, StoreHeading, styles } from "./ui";
+import { Button, Field, Notice, StoreHeading, styles } from "./ui";
 type Props = NativeStackScreenProps<Routes, "MerchantCategories">;
 export function MerchantCategoriesScreen(props: Props) {
   const { account } = useSession();
@@ -35,11 +35,13 @@ function Dashboard({ navigation }: Props) {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [settings, setSettings] = useState(false),
+    [phone, setPhone] = useState(""),
+    [saved, setSaved] = useState(""),
     [attempt, setAttempt] = useState(0);
   const alive = useRef(false),
     lock = useRef(false);
   const types = usePage<StoreType>("catalogo/tipos-loja/");
-  useBrandHeader(shopTheme(shop), "Painel da loja");
+  useBrandHeader(shopTheme(shop), shop?.tipo_catalogo === "servicos" ? "Painel de serviços" : "Painel de produtos");
   useFocusEffect(
     useCallback(() => {
       alive.current = true;
@@ -48,6 +50,7 @@ function Dashboard({ navigation }: Props) {
         .then((value) => {
           if (alive.current) {
             setShop(value);
+            setPhone(value.whatsapp);
             setError("");
           }
         })
@@ -73,6 +76,7 @@ function Dashboard({ navigation }: Props) {
     lock.current = true;
     setBusy(true);
     setError("");
+    setSaved("");
     try {
       setShop(await task());
     } catch (e) {
@@ -89,6 +93,7 @@ function Dashboard({ navigation }: Props) {
         {shop && service ? (
           <>
             <StoreHeading name={shop.nome} logo={shop.logo} />
+            <Text style={styles.subtitle}>{shop.tipo_catalogo === "servicos" ? "Conta de prestador de serviços" : "Conta de loja de produtos"}</Text>
             <View style={styles.card}>
               <StoreStatus shop={shop} />
               <Button
@@ -129,6 +134,28 @@ function Dashboard({ navigation }: Props) {
             />
             {settings && (
               <>
+                <View style={styles.card}>
+                  <Text style={styles.section}>Perfil da loja</Text>
+                  <Text style={styles.small}>Escolha o que sua loja oferece. Os itens já cadastrados serão mantidos.</Text>
+                  {(["produtos", "servicos"] as const).map(mode => (
+                    <Button key={mode} title={mode === "produtos" ? "Loja de produtos" : "Prestador de serviços"}
+                      selected={shop.tipo_catalogo === mode} secondary={shop.tipo_catalogo !== mode}
+                      disabled={busy || shop.tipo_catalogo === mode}
+                      onPress={() => void update(() => service.setCatalogMode(mode))} />
+                  ))}
+                </View>
+                <View style={styles.card}>
+                  <Text style={styles.section}>Telefone de contato da loja</Text>
+                  <Text style={styles.small}>Este número aparece para os clientes e recebe os pedidos enviados pelo WhatsApp.</Text>
+                  <Field label="Telefone / WhatsApp com DDD" value={phone} onChangeText={value => { setPhone(value); setSaved(""); }} keyboardType="phone-pad" editable={!busy} />
+                  <Button title="Salvar telefone" busy={busy} disabled={phone.trim() === shop.whatsapp || !phone.trim()}
+                    onPress={() => void update(async () => {
+                      const updated = await service.setContact(phone);
+                      if (alive.current) { setPhone(updated.whatsapp); setSaved("Telefone atualizado."); }
+                      return updated;
+                    })} />
+                  {!!saved && <Text accessibilityLiveRegion="polite" style={styles.small}>{saved}</Text>}
+                </View>
                 {shop.tipo_catalogo !== "servicos" && (
                   <View style={styles.card}>
                     <Text style={styles.section}>Entrega e retirada</Text>
