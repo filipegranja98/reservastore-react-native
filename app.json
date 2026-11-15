@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Reserva Store",
+    "slug": "reservastore-cliente",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permita que o Reserva Store acesse suas fotos para adicionar imagens aos produtos.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "android": {
+      "package": "com.anonymous.reservastorecliente"
+    }
+  }
+}
