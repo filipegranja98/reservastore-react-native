@@ -103,8 +103,8 @@ function Dashboard({ navigation }: Props) {
               />
             </View>
             <Button
-              title="Acompanhar e gerenciar pedidos"
-              onPress={() => navigation.navigate("Orders")}
+              title={shop.tipo_catalogo === "servicos" ? "Ver agenda e responder solicitações" : "Acompanhar e gerenciar pedidos"}
+              onPress={() => shop.tipo_catalogo === "servicos" ? navigation.navigate("Appointments") : navigation.navigate("Orders")}
             />
             <View style={styles.card}>
               <Text style={styles.section}>

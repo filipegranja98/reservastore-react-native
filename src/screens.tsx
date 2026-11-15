@@ -52,6 +52,8 @@ type ReturnTo = {
   name: string;
 };
 export type Routes = {
+  ScheduleService: { shop: number; name: string; service: number; serviceName: string; price: string };
+  Appointments: { notice?: string } | undefined;
   Shops: undefined;
   Shop: { id: number; name: string };
   Cart: { id: number; name: string };
@@ -326,7 +328,13 @@ export function ShopScreen({ route, navigation }: Props<"Shop">) {
                 <Text style={[styles.section, { color: theme.actionText }]}>
                   {money(item.preco)}
                 </Text>
-                <Button
+                {services ? <Button
+                  title={merchant ? "Use uma conta de cliente para agendar" : account ? "Solicitar agendamento" : "Entrar para agendar"}
+                  secondary disabled={merchant}
+                  onPress={() => account
+                    ? navigation.navigate("ScheduleService", {shop:id,name:shop.nome,service:item.id,serviceName:item.nome,price:item.preco})
+                    : navigation.navigate("Login", {notice:"Entre para escolher a data e o horário do serviço.",returnTo:{screen:"Shop",id,name:shop.nome}})}
+                /> : <Button
                   title={
                     merchant
                       ? "Compras com conta de cliente"
@@ -354,7 +362,7 @@ export function ShopScreen({ route, navigation }: Props<"Shop">) {
                           returnTo: { screen: "Shop", id, name: shop.nome },
                         })
                   }
-                />
+                />}
               </View>
             </View>
           )}
@@ -386,13 +394,12 @@ export function ShopScreen({ route, navigation }: Props<"Shop">) {
               ) : null}
               <StoreContact shop={shop} />
               <Text style={styles.small}>
-                Os itens ficam no carrinho desta loja. Confira o endereço e
-                revise os valores antes de confirmar o pedido.
+                {services ? "Escolha um serviço e sugira uma data e um horário. Acompanhe a resposta em Meus agendamentos. A loja pode responder mesmo quando estiver fechada para atendimento imediato." : "Os itens ficam no carrinho desta loja. Confira o endereço e revise os valores antes de confirmar o pedido."}
               </Text>
             </View>
           }
         />
-        {!merchant && (
+        {!merchant && !services && (
           <Pressable
             onLayout={(event) =>
               setFloatingHeight(event.nativeEvent.layout.height)

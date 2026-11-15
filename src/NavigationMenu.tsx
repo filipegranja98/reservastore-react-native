@@ -21,6 +21,7 @@ export function NavigationMenu({ color = colors.ink }: { color?: string }) {
       | "Shops"
       | "Account"
       | "Orders"
+      | "Appointments"
       | "MerchantCategories"
       | "MerchantCatalog"
       | "Login"
@@ -151,6 +152,9 @@ export function NavigationMenu({ color = colors.ink }: { color?: string }) {
                   disabled={busy}
                   onPress={() => go("MerchantCatalog")}
                 />
+              )}
+              {account && (
+                <Button title={account.papel === "lojista" ? "Agenda de serviços" : "Meus agendamentos"} secondary disabled={busy} onPress={() => go("Appointments")} />
               )}
               {account && (
                 <Button

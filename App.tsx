@@ -1,4 +1,5 @@
 import { PasswordRecoveryScreen } from "./src/PasswordRecoveryScreen";
+import { ScheduleServiceScreen, AppointmentsScreen } from "./src/AppointmentScreens";
 import { MerchantCatalogScreen } from "./src/MerchantCatalogScreen";
 import { ReservaBrand } from "./src/ReservaBrand";
 import { MerchantCategoriesScreen } from "./src/MerchantCategoriesScreen";
@@ -34,6 +35,8 @@ function Navigation() {
           { alignItems: "center", justifyContent: "center", gap: 20 },
         ]}
       >
+        <Stack.Screen name="ScheduleService" component={ScheduleServiceScreen} options={{title:"Solicitar agendamento"}} />
+        <Stack.Screen name="Appointments" component={AppointmentsScreen} options={{title:"Agendamentos"}} />
         <ReservaBrand size={156} />
         <ActivityIndicator color={colors.green} />
       </View>
