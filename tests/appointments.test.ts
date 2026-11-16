@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { appointmentISO, bookingDate } from "../src/appointments";
+import { appointmentISO, bookingDate, bookingDay, moveDay, monday, onBookingDay, type Booking } from "../src/appointments";
 
 test("schedule uses Recife timezone and rejects invalid dates and past times", () => {
   const year = new Date().getUTCFullYear() + 1;
@@ -12,4 +12,14 @@ test("schedule uses Recife timezone and rejects invalid dates and past times", (
   const iso = appointmentISO(day,"14:30");
   assert.match(iso, /T14:30:00-03:00$/);
   assert.match(bookingDate(iso), /14:30/);
+});
+
+test("calendar respects Recife day boundaries, week start and overnight durations",()=>{
+  assert.equal(bookingDay('2026-11-16T01:00:00Z'),'2026-11-15');
+  assert.equal(monday('2026-11-15'),'2026-11-09');
+  assert.equal(moveDay('2026-12-31',1),'2027-01-01');
+  const b={inicio_confirmado:'2026-11-15T23:30:00-03:00',duracao_minutos:120} as Booking;
+  assert.equal(onBookingDay(b,'2026-11-15'),true);
+  assert.equal(onBookingDay(b,'2026-11-16'),true);
+  assert.equal(onBookingDay(b,'2026-11-17'),false);
 });

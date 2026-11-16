@@ -30,6 +30,12 @@ const labels: Record<string, string> = {
   area_entrega: "Área de entrega",
   meio_pagamento: "Pagamento",
   observacoes: "Observações",
+  duracao_minutos: "Duração prevista",
+  inicio_proposto: "Novo horário",
+  inicio_solicitado: "Data de preferência",
+  imagem: "Foto",
+  versao: "Atualização",
+  chave: "Solicitação",
 };
 function errorMessage(value: unknown): string {
   if (typeof value === "string") return value;
