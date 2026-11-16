@@ -38,7 +38,17 @@ const base = runtimeApiUrl(
     : Constants.expoConfig?.hostUri,
   __DEV__ && process.env.EXPO_PUBLIC_USE_DEV_API_PROXY === "true",
 );
-export const api = new ApiClient(base, vault, fetch, !__DEV__);
+// Expo 58 replaces global fetch with expo/fetch, whose multipart converter
+// rejects React Native's {uri, name, type} file parts. Use RN's XHR-backed
+// transport for native multipart uploads; it can read picker cache URIs.
+const transport: typeof fetch = (url, init) => {
+  if (Platform.OS !== "web" && init?.body instanceof FormData) {
+    const nativeFetch = require("whatwg-fetch").fetch as typeof fetch;
+    return nativeFetch(url, init);
+  }
+  return fetch(url, init);
+};
+export const api = new ApiClient(base, vault, transport, !__DEV__);
 
 export const mediaUri = (value: string | null) =>
   runtimeMediaUrl(

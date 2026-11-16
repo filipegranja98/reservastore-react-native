@@ -25,7 +25,7 @@ export async function pickBookingPhotos(remaining:number):Promise<BookingPhoto[]
 }
 export async function uploadBookingPhoto(id:number,photo:BookingPhoto){
   const form=new FormData();form.append('chave',photo.key);
-  if(photo.file)form.append('imagem',photo.file,photo.name);
+  if(Platform.OS==='web'&&photo.file)form.append('imagem',photo.file,photo.name);
   else form.append('imagem',{uri:photo.uri,type:photo.type,name:photo.name} as unknown as Blob);
   return api.request<Booking>(`agendamentos/${id}/fotos/`,'POST',form);
 }

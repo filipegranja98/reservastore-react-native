@@ -120,9 +120,9 @@ export class ApiClient {
     if (path.startsWith("/") || path.includes("://"))
       throw new ApiError(0, "Caminho de API inválido.");
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
     const multipart =
       typeof FormData !== "undefined" && body instanceof FormData;
+    const timeout = setTimeout(() => controller.abort(), multipart ? 90000 : 15000);
     try {
       // Browser fetch must be invoked without binding it to the API client.
       const transport = this.transport;
