@@ -35,8 +35,6 @@ function Navigation() {
           { alignItems: "center", justifyContent: "center", gap: 20 },
         ]}
       >
-        <Stack.Screen name="ScheduleService" component={ScheduleServiceScreen} options={{title:"Solicitar agendamento"}} />
-        <Stack.Screen name="Appointments" component={AppointmentsScreen} options={{title:"Agendamentos"}} />
         <ReservaBrand size={156} />
         <ActivityIndicator color={colors.green} />
       </View>
@@ -55,6 +53,8 @@ function Navigation() {
           contentStyle: { backgroundColor: colors.cream },
         }}
       >
+        <Stack.Screen name="ScheduleService" component={ScheduleServiceScreen} options={{title:"Solicitar agendamento"}} />
+        <Stack.Screen name="Appointments" component={AppointmentsScreen} options={{title:"Agendamentos"}} />
         <Stack.Screen
           name="PasswordRecovery"
           component={PasswordRecoveryScreen}
