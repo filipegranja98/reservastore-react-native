@@ -68,7 +68,7 @@ function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, 
       try{await bookingWhatsApp(result,false);}catch{/* The saved request remains accessible even without WhatsApp. */}
     } catch (e) { setError((e as Error).message); } finally { lock.current = false; setBusy(false); }
   }
-  return <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+  return <ScrollView style={styles.screen} contentContainerStyle={[styles.content,{width:'100%',maxWidth:760,alignSelf:'center'}]} keyboardShouldPersistTaps="handled">
     <Text style={styles.eyebrow}>SOLICITAR ATENDIMENTO</Text>
     <Text style={styles.title}>{route.params.serviceName}</Text>
     <Text style={styles.subtitle}>{route.params.name}</Text>
