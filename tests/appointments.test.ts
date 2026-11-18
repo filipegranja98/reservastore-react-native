@@ -23,3 +23,11 @@ test("calendar respects Recife day boundaries, week start and overnight duration
   assert.equal(onBookingDay(b,'2026-11-16'),true);
   assert.equal(onBookingDay(b,'2026-11-17'),false);
 });
+
+test('service quote currency is positive and preserves centavos',async()=>{
+ const {serviceQuoteValue}=await import('../src/appointments');
+ assert.equal(serviceQuoteValue('150,50'),'150.50');
+ assert.equal(serviceQuoteValue('1.250,99'),'1250.99');
+ assert.equal(serviceQuoteValue('10.01'),'10.01');
+ for(const input of ['0','-10','abc','1.234','1,234','100000000','NaN']) assert.throws(()=>serviceQuoteValue(input));
+});

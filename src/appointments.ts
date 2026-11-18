@@ -6,28 +6,30 @@ export interface Booking {
   endereco: AddressInput; inicio_solicitado: string; inicio_proposto: string | null;
   inicio_confirmado: string | null; observacoes: string; mensagem_loja: string;
   status: BookingStatus; versao: number;
+  orcamento_valor?: string | null; orcamento_status?: "" | "pendente" | "aceito" | "recusado";
+  orcamento_descricao?: string; orcamento_enviado_em?: string | null; orcamento_respondido_em?: string | null;
   duracao_minutos: number; duracao_proposta: number; fotos: number[];
   inicio_reagendamento: string | null; reagendamento_origem: string;
   motivo_reagendamento: string; motivo_cancelamento: string;
 }
 export const bookingLabels: Record<BookingStatus, string> = {
-  solicitado: "Aguardando a loja", contraproposta: "Novo horário proposto",
-  confirmado: "Agendamento confirmado", em_execucao: "Limpeza em andamento", concluido: "Serviço concluído",
-  recusado: "Solicitação recusada", cancelado: "Agendamento cancelado",
+  solicitado: "Aguardando a loja", contraproposta: "Novo horÃ¡rio proposto",
+  confirmado: "Agendamento confirmado", em_execucao: "Limpeza em andamento", concluido: "ServiÃ§o concluÃ­do",
+  recusado: "SolicitaÃ§Ã£o recusada", cancelado: "Agendamento cancelado",
 };
-// The app operates in Reserva São Lourenço (UTC-03:00), regardless of device timezone.
+// The app operates in Reserva SÃ£o LourenÃ§o (UTC-03:00), regardless of device timezone.
 export function appointmentISO(day: string, time: string): string {
   const d = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(day.trim());
   const t = /^(\d{2}):(\d{2})$/.exec(time.trim());
-  if (!d || !t) throw Error("Informe data DD/MM/AAAA e horário HH:MM.");
+  if (!d || !t) throw Error("Informe data DD/MM/AAAA e horÃ¡rio HH:MM.");
   const [, dd, mm, yyyy] = d;
   const hour = Number(t[1]), minute = Number(t[2]);
   const check = new Date(Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd)));
   if (hour > 23 || minute > 59 || check.getUTCFullYear() !== Number(yyyy) || check.getUTCMonth() !== Number(mm) - 1 || check.getUTCDate() !== Number(dd))
-    throw Error("Informe uma data e um horário válidos.");
+    throw Error("Informe uma data e um horÃ¡rio vÃ¡lidos.");
   const iso = `${yyyy}-${mm}-${dd}T${t[1]}:${t[2]}:00-03:00`;
   const value = Date.parse(iso);
-  if (value <= Date.now() || value > Date.now() + 365 * 86400000) throw Error("Escolha uma data futura, nos próximos 12 meses.");
+  if (value <= Date.now() || value > Date.now() + 365 * 86400000) throw Error("Escolha uma data futura, nos prÃ³ximos 12 meses.");
   return iso;
 }
 export function bookingDay(iso = new Date().toISOString()) { return new Date(Date.parse(iso) - 3 * 3600000).toISOString().slice(0,10); }
@@ -44,4 +46,13 @@ export function bookingDate(iso: string): string {
 export function suggestedDay(offset: number): string {
   const date = new Date(Date.now() - 3 * 3600000 + offset * 86400000);
   return `${String(date.getUTCDate()).padStart(2, "0")}/${String(date.getUTCMonth() + 1).padStart(2, "0")}/${date.getUTCFullYear()}`;
+}
+
+export function serviceQuoteValue(value: string): string {
+  let input = value.trim();
+  if (/^\d{1,3}(?:\.\d{3})+,\d{1,2}$/.test(input)) input = input.replace(/\./g, "");
+  input = input.replace(",", ".");
+  if (!/^\d{1,8}(?:\.\d{1,2})?$/.test(input) || Number(input) <= 0)
+    throw Error("Informe o valor total do serviço, maior que zero. Exemplo: 150,00.");
+  return Number(input).toFixed(2);
 }
