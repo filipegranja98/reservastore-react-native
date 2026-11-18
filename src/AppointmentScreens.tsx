@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View, RefreshControl, Modal, Linking, Platform } from "react-native";
 import {SafeAreaView} from 'react-native-safe-area-context';
 import { useFocusEffect } from "@react-navigation/native";
@@ -25,12 +25,13 @@ async function bookingWhatsApp(b:Booking,merchant:boolean){
 }
 
 function ScheduleFields({ day, time, setDay, setTime, busy }: { day: string; time: string; setDay(v: string): void; setTime(v: string): void; busy: boolean }) {
+  const [customTime, setCustomTime] = useState(false);
   return <>
     <View style={styles.row}>{[1, 2].map(offset => <Button key={offset} title={offset === 1 ? "Amanhã" : "Depois de amanhã"} secondary selected={day === suggestedDay(offset)} disabled={busy} onPress={() => setDay(suggestedDay(offset))} />)}</View>
     <BookingDatePicker value={day} onChange={setDay} disabled={busy}/>
     <Text style={styles.label}>Horário de preferência</Text><ScrollView horizontal contentContainerStyle={{gap:8}}>{['08:00','09:00','10:00','13:00','14:00','15:00','16:00'].map(value=><Button key={value} title={value} selected={time===value} secondary={time!==value} disabled={busy} onPress={()=>setTime(value)}/>)}</ScrollView>
-    <Field label="Ou informe outro horário (HH:MM)" placeholder="Ex.: 14:30" value={time} onChangeText={value=>{const digits=value.replace(/\D/g,'').slice(0,4);setTime(digits.length>2?`${digits.slice(0,2)}:${digits.slice(2)}`:digits);}} keyboardType="number-pad" maxLength={5} editable={!busy} />
-    <Text style={styles.small}>Horário de São Lourenço da Mata.</Text>
+    <Button title={customTime ? "Ocultar outro horário" : "Escolher outro horário"} secondary disabled={busy} onPress={() => setCustomTime(!customTime)} />
+    {customTime && <Field label="Outro horário" placeholder="Ex.: 14:30" value={time} onChangeText={value=>{const digits=value.replace(/\D/g,'').slice(0,4);setTime(digits.length>2?`${digits.slice(0,2)}:${digits.slice(2)}`:digits);}} keyboardType="number-pad" maxLength={5} editable={!busy} />}
   </>;
 }
 
@@ -48,8 +49,18 @@ function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, 
   const [adding, setAdding] = useState(false), [savedAddress, setSavedAddress] = useState<Address | null>(null);
   const [photos,setPhotos]=useState<BookingPhoto[]>([]);
   const [draft, setDraft] = useState<AddressInput>({ condominio: "", bloco: "", apartamento: "", destinatario: account!.first_name, telefone: account!.telefone, complemento: "" });
+  const [step, setStep] = useState(0);
+  const scroll = useRef<React.ElementRef<typeof ScrollView>>(null);
   const lock = useRef(false), key = useRef(Crypto.randomUUID());
   const list = savedAddress ? [savedAddress, ...addresses.items.filter(a => a.id !== savedAddress.id)] : addresses.items;
+  useEffect(() => { if (selected === null && addresses.items.length) setSelected(addresses.items[0].id); }, [addresses.items, selected]);
+  function changeStep(next: number) { setError(""); setStep(next); scroll.current?.scrollTo({y: 0, animated: true}); }
+  function next() {
+    if (step === 0 && !notes.trim()) { setError("Conte o que deseja limpar. Por exemplo: um sofá de 3 lugares ou dois colchões."); return; }
+    if (step === 1 && !selected) { setError("Selecione um endereço ou toque em Cadastrar endereço para informar onde será a limpeza."); return; }
+    if (step === 1 && adding) { setError("Salve o novo endereço ou feche o cadastro para usar o endereço selecionado."); return; }
+    changeStep(step + 1);
+  }
   async function saveAddress() {
     if (lock.current) return; lock.current = true; setBusy(true); setError("");
     try { const value = await api.request<Address>("enderecos/", "POST", draft); setSavedAddress(value); setSelected(value.id); setAdding(false); }
@@ -58,7 +69,10 @@ function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, 
   async function submit() {
     if (lock.current) return; lock.current = true; setBusy(true); setError("");
     try {
-      if (!selected) throw Error("Selecione o endereço onde o serviço será realizado.");
+      if (!notes.trim()) { setStep(0); throw Error("Conte o que você deseja limpar antes de enviar."); }
+      if (!selected) { setStep(1); throw Error("Selecione o endereço onde será a limpeza."); }
+      if (!day) throw Error("Escolha no calendário o dia em que prefere receber a limpeza.");
+      if (!time) throw Error("Selecione um horário de preferência para continuar.");
       let result = await api.request<Booking>("agendamentos/", "POST", { servico: route.params.service, endereco: selected, inicio_solicitado: appointmentISO(day, time), observacoes: notes.trim(), chave: key.current });
       let failed=0;
       for(const photo of photos){try{result=await uploadBookingPhoto(result.id,photo);}catch{failed++;}}
@@ -68,12 +82,17 @@ function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, 
       try{await bookingWhatsApp(result,false);}catch{/* The saved request remains accessible even without WhatsApp. */}
     } catch (e) { setError((e as Error).message); } finally { lock.current = false; setBusy(false); }
   }
-  return <ScrollView style={styles.screen} contentContainerStyle={[styles.content,{width:'100%',maxWidth:760,alignSelf:'center'}]} keyboardShouldPersistTaps="handled">
-    <Text style={styles.eyebrow}>SOLICITAR ATENDIMENTO</Text>
-    <Text style={styles.title}>{route.params.serviceName}</Text>
-    <Text style={styles.subtitle}>{route.params.name}</Text>
-    <View style={styles.card}><Text style={styles.section}>1. Sugira uma data e um horário</Text><Text style={styles.small}>A loja poderá aceitar ou sugerir outro horário. O serviço só fica marcado após a confirmação.</Text><ScheduleFields day={day} time={time} setDay={setDay} setTime={setTime} busy={busy} /></View>
-    <View style={styles.card}><Text style={styles.section}>2. Onde será o atendimento?</Text>
+  return <ScrollView ref={scroll} style={styles.screen} contentContainerStyle={[styles.content,{width:'100%',maxWidth:600,alignSelf:'center'}]} keyboardShouldPersistTaps="handled">
+    <Text style={styles.small}>{route.params.name} • Etapa {step + 1} de 3</Text>
+    <View accessibilityLabel={`Etapa ${step + 1} de 3`} style={{flexDirection:'row',gap:6}}>{[0,1,2].map(index=><View key={index} style={{flex:1,height:4,borderRadius:4,backgroundColor:index<=step?'#17624E':'#DCE4DC'}}/>)}</View>
+    <Text accessibilityRole="header" style={styles.title}>{['O que vamos limpar?', 'Onde será a limpeza?', 'Qual o melhor dia?'][step]}</Text>
+    {step === 0 && <View style={{gap:16}}>
+      <Field label="O que você quer limpar?" placeholder="Ex.: 1 sofá de 3 lugares e 2 cadeiras" value={notes} onChangeText={setNotes} multiline maxLength={5000} editable={!busy}/>
+      <DraftBookingPhotos photos={photos} onChange={setPhotos} busy={busy}/>
+    </View>}
+    {step === 1 && <View style={{gap:12}}>
+      {addresses.busy && !list.length && <Text style={styles.small}>Buscando seus endereços…</Text>}
+      {!addresses.busy && !addresses.error && !list.length && <Text style={styles.subtitle}>Cadastre o endereço para receber o atendimento.</Text>}
       {list.map(address => <Button key={address.id} title={`${address.condominio} • Bloco ${address.bloco} • Apto ${address.apartamento}`} selected={selected === address.id} secondary={selected !== address.id} disabled={busy} onPress={() => setSelected(address.id)} />)}
       {!!addresses.error && <Notice message={addresses.error} retry={addresses.reload} />}
       {addresses.hasMore && <Button title="Mais endereços" secondary disabled={busy} onPress={addresses.more} />}
@@ -83,10 +102,23 @@ function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, 
         {([['bloco','Bloco'],['apartamento','Apartamento'],['destinatario','Nome de quem recebe'],['telefone','Telefone com DDD'],['complemento','Complemento (opcional)']] as const).map(([field,label]) => <Field key={field} label={label} value={draft[field]} onChangeText={value => setDraft(old => ({...old,[field]:value}))} editable={!busy} keyboardType={field === 'telefone' ? 'phone-pad' : 'default'} />)}
         <Button title="Salvar endereço" busy={busy} disabled={!draft.condominio || !draft.bloco.trim() || !draft.apartamento.trim() || !draft.destinatario.trim() || !draft.telefone.trim()} onPress={() => void saveAddress()} />
       </>}
-    </View>
-    <View style={styles.card}><Text style={styles.section}>3. Conte mais sobre o que precisa</Text><Field label="Detalhes do estofado e da limpeza (opcional)" placeholder="Ex.: sofá de 3 lugares, tecido claro, com manchas…" value={notes} onChangeText={setNotes} multiline maxLength={5000} editable={!busy} /><DraftBookingPhotos photos={photos} onChange={setPhotos} busy={busy}/><Text style={styles.label}>Valor de referência: {money(route.params.price)}</Text><Text style={styles.small}>Após enviar, abriremos o WhatsApp da loja para combinar o valor e os detalhes. Confirme o envio da mensagem no WhatsApp. Esta solicitação não efetua pagamento.</Text></View>
-    {!!error && <Notice message={error} />}
-    <Button title="Enviar solicitação de agendamento" busy={busy} disabled={!selected || !day || !time} onPress={() => void submit()} />
+
+    </View>}
+    {step === 2 && <View style={{gap:16}}>
+      <Text style={styles.small}>Escolha sua preferência. A loja vai confirmar a disponibilidade.</Text>
+      <ScheduleFields day={day} time={time} setDay={setDay} setTime={setTime} busy={busy}/>
+      <View style={styles.card}>
+        <Text style={styles.label}>Seu pedido de atendimento</Text>
+        <Text style={styles.small}>{notes}</Text>
+        <Text style={styles.small}>{photos.length ? `${photos.length} foto(s) anexada(s)` : 'Sem fotos'}</Text>
+        {list.filter(a=>a.id===selected).map(a=><Text key={a.id} style={styles.small}>{a.condominio} • Bloco {a.bloco} • Apto {a.apartamento}</Text>)}
+        <Text style={styles.small}>Referência: {money(route.params.price)}. O valor final será combinado com a loja.</Text>
+      </View>
+      <Text style={styles.small}>Ao enviar, sua solicitação fica salva e o WhatsApp abre para conversar com a loja.</Text>
+    </View>}
+    {!!error && <Notice message={error}/>}
+    <Button title={step === 2 ? 'Solicitar agendamento' : 'Continuar'} busy={busy} onPress={() => step === 2 ? void submit() : next()}/>
+    {step > 0 && <Button title="Voltar à etapa anterior" secondary disabled={busy} onPress={()=>changeStep(step-1)}/>}
   </ScrollView>;
 }
 

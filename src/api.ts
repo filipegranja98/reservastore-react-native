@@ -1,3 +1,4 @@
+import {apiErrorMessage} from "./errorMessages";
 import type { Tokens, Registration } from "./types";
 export interface TokenVault {
   read(): Promise<Tokens | null>;
@@ -10,44 +11,6 @@ export class ApiError extends Error {
   ) {
     super(message);
   }
-}
-const labels: Record<string, string> = {
-  username: "Usuário",
-  codigo: "Código de recuperação",
-  nova_senha: "Nova senha",
-  password: "Senha",
-  first_name: "Nome",
-  email: "Email",
-  telefone: "Telefone",
-  non_field_errors: "Dados",
-  detail: "",
-  condominio: "Condomínio",
-  bloco: "Bloco",
-  apartamento: "Apartamento",
-  destinatario: "Destinatário",
-  complemento: "Complemento",
-  endereco: "Endereço",
-  area_entrega: "Área de entrega",
-  meio_pagamento: "Pagamento",
-  observacoes: "Observações",
-  duracao_minutos: "Duração prevista",
-  inicio_proposto: "Novo horário",
-  inicio_solicitado: "Data de preferência",
-  imagem: "Foto",
-  versao: "Atualização",
-  chave: "Solicitação",
-};
-function errorMessage(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (Array.isArray(value)) return value.map(errorMessage).join(" ");
-  if (value && typeof value === "object")
-    return Object.entries(value)
-      .map(
-        ([key, val]) =>
-          `${labels[key] ?? key}${labels[key] === "" ? "" : ": "}${errorMessage(val)}`,
-      )
-      .join("\n");
-  return "Não foi possível concluir a solicitação.";
 }
 export function normalizeBase(value: string): string {
   if (!value.trim())
@@ -148,18 +111,26 @@ export class ApiClient {
         if (response.ok)
           throw new ApiError(
             response.status,
-            "A API retornou uma resposta inválida.",
+            "Não conseguimos carregar a resposta. Tente novamente em instantes.",
           );
       }
       if (!response.ok)
         throw new ApiError(
           response.status,
           response.status >= 500
-            ? "O serviço está indisponível. Tente novamente."
+            ? "O Reserva Store está temporariamente indisponível. Aguarde um pouco e tente novamente."
             : response.status === 429
               ? "Muitas tentativas. Aguarde um pouco e tente novamente."
-              : data
-                ? errorMessage(data)
+              : response.status === 401
+                ? path === "token/"
+                  ? "Não foi possível entrar. Confira seu usuário e sua senha. Se esqueceu a senha, toque em ‘Esqueci minha senha’."
+                  : "Seu acesso expirou. Entre novamente para continuar."
+                : response.status === 403
+                  ? "Sua conta não tem acesso a esta ação. Confira se entrou com a conta correta."
+                  : response.status === 404
+                    ? "Este item não está mais disponível. Volte e atualize a tela."
+                    : data
+                ? apiErrorMessage(data)
                 : "Não foi possível concluir a solicitação.",
         );
       return data as T;
@@ -168,8 +139,8 @@ export class ApiClient {
       throw new ApiError(
         0,
         controller.signal.aborted
-          ? "A conexão demorou demais. Tente novamente."
-          : "Sem conexão com a API. Verifique a rede e tente novamente.",
+          ? "A resposta está demorando mais que o esperado. Confira sua internet e tente novamente."
+          : "Não conseguimos conectar ao Reserva Store. Confira sua internet e tente novamente.",
       );
     } finally {
       clearTimeout(timeout);

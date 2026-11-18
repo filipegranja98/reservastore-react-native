@@ -123,7 +123,7 @@ test("offline refresh preserves tokens so user can retry", async () => {
     }),
   );
   await client.restore();
-  await assert.rejects(client.request("conta/"), /Sem conexão/);
+  await assert.rejects(client.request("conta/"), /Confira sua internet/);
   assert.deepEqual(store.get(), original);
 });
 test("logout after expired access revokes the rotated refresh, then clears storage", async () => {
@@ -266,4 +266,9 @@ test("authenticated multipart preserves binary body and lets fetch set the bound
    return json({id:1});
  }));
  await client.restore();await client.request("produtos/","POST",form);
+});
+
+test('wrong login explains credentials and password recovery in Portuguese',async()=>{
+ const client=new ApiClient(base,vault(null),transport(()=>json({detail:'No active account found with the given credentials'},401)));
+ await assert.rejects(client.login('test','incorrect'),(error:ApiError)=>error.status===401&&/Confira seu usuário e sua senha/.test(error.message)&&/Esqueci minha senha/.test(error.message)&&!error.message.includes('active account'));
 });

@@ -1,4 +1,5 @@
 import { useStoreTheme } from "./themeContext";
+import { friendlyMessage } from "./errorMessages";
 import { mediaUri } from "./client";
 import React from "react";
 import {
@@ -163,7 +164,7 @@ export function Notice({
   return (
     <View style={styles.card}>
       <Text accessibilityRole="alert" style={styles.error}>
-        {message}
+        {message.split('\n').map(friendlyMessage).join('\n')}
       </Text>
       {retry && <Button title="Tentar novamente" secondary onPress={retry} />}
     </View>

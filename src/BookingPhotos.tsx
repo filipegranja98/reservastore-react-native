@@ -32,7 +32,7 @@ export async function uploadBookingPhoto(id:number,photo:BookingPhoto){
 export function DraftBookingPhotos({photos,onChange,busy}:{photos:BookingPhoto[];onChange(p:BookingPhoto[]):void;busy:boolean}){
   const [error,setError]=useState('');
   async function pick(){setError('');try{onChange([...photos,...await pickBookingPhotos(5-photos.length)]);}catch(e){setError((e as Error).message);}}
-  return <View style={{gap:12}}><Text style={styles.label}>Fotos do estofado (opcional)</Text><Text style={styles.small}>Até 5 fotos, 5 MB cada. Mostre o estofado, as manchas e os detalhes que precisam de cuidado.</Text>
+  return <View style={{gap:12}}><Text style={styles.label}>Fotos do estofado (opcional)</Text><Text style={styles.small}>Mostre o estofado e as manchas. Até 5 fotos, com até 5 MB cada.</Text>
     <ScrollView horizontal contentContainerStyle={{gap:10}}>{photos.map((p,i)=><View key={p.key} style={{gap:8,width:130}}><Image source={{uri:p.uri}} style={{width:130,height:100,borderRadius:12}} accessibilityLabel={`Foto ${i+1} do estofado`}/><Button title="Remover" secondary disabled={busy} onPress={()=>onChange(photos.filter(v=>v.key!==p.key))}/></View>)}</ScrollView>
     {photos.length<5&&<Button title="Adicionar fotos do estofado" secondary disabled={busy} onPress={()=>void pick()}/>}{!!error&&<Notice message={error}/>}</View>;
 }
