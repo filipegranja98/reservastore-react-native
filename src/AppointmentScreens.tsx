@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, Text, View, RefreshControl, Modal, Linking, Platform } from "react-native";
+import { ScrollView, Text, View, RefreshControl, Modal, Linking, Platform, AppState } from "react-native";
 import {SafeAreaView} from 'react-native-safe-area-context';
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -127,13 +127,19 @@ export function AppointmentsScreen({ route, navigation }: NativeStackScreenProps
   return <BookingList key={account.id} merchant={account.papel === "lojista"} notice={route.params?.notice} />;
 }
 function BookingList({ merchant, notice }: { merchant: boolean; notice?: string }) {
-  const [filter, setFilter] = useState("pendentes");
+  const [filter, setFilter] = useState(merchant ? "pendentes" : "todos");
   const [view,setView]=useState<'list'|'day'|'week'>('list'),[attempt,setAttempt]=useState(0),[detail,setDetail]=useState<Booking|null>(null),[query,setQuery]=useState(''),[search,setSearch]=useState(''),[feedback,setFeedback]=useState('');
   const [summary,setSummary]=useState<{total:number;pendentes:number;agendados:number;concluidos:number}|null>(null);
   const page = usePage<Booking>(`agendamentos/?status=${filter}&busca=${encodeURIComponent(search)}`, true);
   useFocusEffect(useCallback(() => { void page.reload(); }, [page.reload]));
   useFocusEffect(useCallback(()=>{let active=true;api.request<{total:number;pendentes:number;agendados:number;concluidos:number}>('agendamentos/resumo/').then(data=>{if(active)setSummary(data);}).catch(()=>{if(active)setSummary(null);});return()=>{active=false;};},[attempt]));
   async function refresh(){await page.reload();setAttempt(v=>v+1);if(detail){try{setDetail(await api.request<Booking>(`agendamentos/${detail.id}/`));}catch{setDetail(null);}}}
+  const refreshLatest=useRef(refresh); refreshLatest.current=()=>page.items.length<=20?refresh():Promise.resolve();
+  useFocusEffect(useCallback(()=>{
+    const timer=setInterval(()=>{if(AppState.currentState!=='background'&&AppState.currentState!=='inactive'&&(typeof document==='undefined'||document.visibilityState!=='hidden'))void refreshLatest.current();},15000);
+    const subscription=AppState.addEventListener('change',state=>{if(state==='active')void refreshLatest.current();});
+    return()=>{clearInterval(timer);subscription.remove();};
+  },[]));
   function changed(b:Booking){setFeedback(bookingLabels[b.status]);if(detail)setDetail(b);}
   return <ScrollView style={styles.screen} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={page.busy} onRefresh={()=>void refresh()} />}>
     <Text style={styles.eyebrow}>{merchant?'SOLICITAÇÕES E ATENDIMENTOS':'MEUS SERVIÇOS'}</Text><Text style={styles.title}>{merchant ? "Agenda de serviços" : "Meus agendamentos"}</Text>
@@ -144,7 +150,7 @@ function BookingList({ merchant, notice }: { merchant: boolean; notice?: string 
     <View style={[styles.row,{gap:8}]}>{([['list','Lista'],['day','Dia'],['week','Semana']] as const).map(([value,label])=><Button key={value} title={label} selected={view===value} secondary={view!==value} onPress={()=>setView(value)}/>)}</View>
     {view!=='list'?<><BookingAgenda view={view} attempt={attempt} onSelect={setDetail}/><Button title={`Ver solicitações pendentes${summary?` • ${summary.pendentes}`:''}`} secondary onPress={()=>{setFilter('pendentes');setView('list');}}/></>:<>
     <Field label={merchant?'Buscar cliente, telefone, serviço ou condomínio':'Buscar serviço ou condomínio'} value={query} onChangeText={setQuery} onSubmitEditing={()=>setSearch(query.trim())} returnKeyType="search"/><Button title="Buscar atendimentos" secondary onPress={()=>setSearch(query.trim())}/>
-    <ScrollView horizontal contentContainerStyle={{gap:8}}>{[['pendentes','Pendentes'],['confirmado','Confirmados'],['historico','Histórico']].map(([value,label]) => <Button key={value} title={label} secondary={filter !== value} selected={filter === value} onPress={() => setFilter(value)} />)}</ScrollView>
+    <ScrollView horizontal contentContainerStyle={{gap:8}}>{[['todos','Todos'],['pendentes','Pendentes'],['confirmado','Confirmados'],['historico','Histórico']].map(([value,label]) => <Button key={value} title={label} secondary={filter !== value} selected={filter === value} onPress={() => setFilter(value)} />)}</ScrollView>
     {!!page.error && <Notice message={page.error} retry={page.reload} />}
     {!page.busy && !page.error && !page.items.length && <Text style={styles.subtitle}>Nenhum agendamento nesta etapa.</Text>}
     {page.items.map(booking => <BookingCard key={`${booking.id}-${booking.versao}`} booking={booking} merchant={merchant} refresh={refresh} onChanged={changed} />)}
@@ -182,7 +188,7 @@ function BookingCard({ booking: b, merchant, refresh, onChanged }: { booking: Bo
   async function saveDetails(){if(lock.current)return;lock.current=true;setBusy(true);setError('');try{const updated=await api.request<Booking>(`agendamentos/${b.id}/editar/`,'POST',{versao:b.versao,observacoes:description,...(editAddress?{endereco:Number(editAddress)}:{})});onChanged(updated);await refresh();setEditing(false);}catch(e){setError((e as Error).message);}finally{lock.current=false;setBusy(false);}}
   return <View style={styles.card}>
     <Text style={styles.eyebrow}>AGENDAMENTO #{b.id}</Text><Text style={styles.section}>{b.servico_nome}</Text>
-    <View style={[styles.badge,{backgroundColor:b.status==='confirmado'?'#DDF3E4':b.status==='contraproposta'?'#FFF0C2':'#EAF1E9'}]}><Text style={styles.label}>{bookingLabels[b.status]}</Text></View>
+    <View style={[styles.badge,{backgroundColor:b.status==='cancelado'?'#FDE9E7':b.status==='confirmado'?'#DDF3E4':b.status==='contraproposta'?'#FFF0C2':'#EAF1E9'}]}><Text style={styles.label}>{bookingLabels[b.status]}</Text></View>
     <Text style={styles.label}>{merchant ? b.cliente_nome : b.loja_nome}</Text>
     <Text style={styles.subtitle}>Solicitado: {bookingDate(b.inicio_solicitado)}</Text>
     {!!b.inicio_proposto && <Text style={styles.label}>Novo horário sugerido: {bookingDate(b.inicio_proposto)}</Text>}
@@ -194,7 +200,11 @@ function BookingCard({ booking: b, merchant, refresh, onChanged }: { booking: Bo
     {!!b.endereco.complemento && <Text style={styles.small}>{b.endereco.complemento}</Text>}
     {!!b.observacoes && <Text style={styles.subtitle}>Detalhes do cliente: {b.observacoes}</Text>}
     {!!b.mensagem_loja && <Text style={styles.subtitle}>Mensagem da loja: {b.mensagem_loja}</Text>}
-    {!!b.motivo_cancelamento&&<Text style={styles.small}>Motivo do cancelamento: {b.motivo_cancelamento}</Text>}
+    {b.status==='cancelado'&&<View style={[styles.card,{backgroundColor:'#FDE9E7',borderColor:'#E9B6B0'}]}>
+      <Text style={[styles.label,{color:'#9A302E'}]}>{b.cancelado_por==='loja'?'Cancelado pela loja':b.cancelado_por==='cliente'?'Cancelado pelo cliente':'Agendamento cancelado'}</Text>
+      {!!b.motivo_cancelamento&&<Text style={styles.label}>Motivo: {b.motivo_cancelamento}</Text>}
+      {!!b.cancelado_em&&<Text style={styles.small}>{bookingDate(b.cancelado_em)}</Text>}
+    </View>}
     <BookingPhotos booking={b} merchant={merchant} refresh={refresh}/>
     {(!!b.orcamento_status || (merchant&&(pending||b.status==='confirmado'))) && <View style={[styles.card,{backgroundColor:'#F1F6F2'}]}>
       <Text style={styles.section}>Orçamento do serviço</Text>

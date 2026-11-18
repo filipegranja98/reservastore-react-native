@@ -1,3 +1,4 @@
+import {BookingCancellationNotice} from "./src/BookingCancellationNotice";
 import { PasswordRecoveryScreen } from "./src/PasswordRecoveryScreen";
 import { ScheduleServiceScreen, AppointmentsScreen } from "./src/AppointmentScreens";
 import { MerchantCatalogScreen } from "./src/MerchantCatalogScreen";
@@ -10,7 +11,7 @@ import { OrdersScreen, OrderScreen } from "./src/OrderScreens";
 import { CartScreen } from "./src/CartScreen";
 import React from "react";
 import { ActivityIndicator, Image, Text, View } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, useNavigationContainerRef } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -27,6 +28,7 @@ import { colors, styles } from "./src/ui";
 const Stack = createNativeStackNavigator<Routes>();
 function Navigation() {
   const { booting, account } = useSession();
+  const navigationRef=useNavigationContainerRef<Routes>();
   if (booting)
     return (
       <View
@@ -40,7 +42,9 @@ function Navigation() {
       </View>
     );
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
+      <View style={{flex:1}}>
+      <BookingCancellationNotice onOpen={()=>{if(navigationRef.isReady())navigationRef.navigate("Appointments");}}/>
       <Stack.Navigator
         initialRouteName={landingRoute(account?.papel)}
         screenOptions={{
@@ -144,6 +148,7 @@ function Navigation() {
           options={{ title: "Minha conta" }}
         />
       </Stack.Navigator>
+      </View>
     </NavigationContainer>
   );
 }

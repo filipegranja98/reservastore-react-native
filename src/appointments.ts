@@ -8,6 +8,7 @@ export interface Booking {
   status: BookingStatus; versao: number;
   orcamento_valor?: string | null; orcamento_status?: "" | "pendente" | "aceito" | "recusado";
   orcamento_descricao?: string; orcamento_enviado_em?: string | null; orcamento_respondido_em?: string | null;
+  cancelado_por?: ""|"loja"|"cliente"; cancelado_em?: string | null;
   duracao_minutos: number; duracao_proposta: number; fotos: number[];
   inicio_reagendamento: string | null; reagendamento_origem: string;
   motivo_reagendamento: string; motivo_cancelamento: string;
