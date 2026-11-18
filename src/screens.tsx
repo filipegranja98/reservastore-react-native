@@ -325,9 +325,9 @@ export function ShopScreen({ route, navigation }: Props<"Shop">) {
               <Thumbnail uri={item.imagem} name={item.nome} />
               <View style={{ flex: 1, gap: 7 }}>
                 <Text style={styles.label}>{item.nome}</Text>
-                <Text style={[styles.section, { color: theme.actionText }]}>
-                  {services ? "Valor a combinar" : money(item.preco)}
-                </Text>
+                {!services && <Text style={[styles.section, { color: theme.actionText }]}>
+                  {money(item.preco)}
+                </Text>}
                 {services ? <Button
                   title={merchant ? "Use uma conta de cliente para agendar" : account ? "Solicitar agendamento" : "Entrar para agendar"}
                   secondary disabled={merchant}

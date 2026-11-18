@@ -112,7 +112,6 @@ function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, 
         <Text style={styles.small}>{notes}</Text>
         <Text style={styles.small}>{photos.length ? `${photos.length} foto(s) anexada(s)` : 'Sem fotos'}</Text>
         {list.filter(a=>a.id===selected).map(a=><Text key={a.id} style={styles.small}>{a.condominio} • Bloco {a.bloco} • Apto {a.apartamento}</Text>)}
-        <Text style={styles.small}>Valor a combinar com a loja.</Text>
       </View>
       <Text style={styles.small}>Ao enviar, sua solicitação fica salva e o WhatsApp abre para conversar com a loja.</Text>
     </View>}
@@ -185,7 +184,6 @@ function BookingCard({ booking: b, merchant, refresh, onChanged }: { booking: Bo
     <Text selectable style={styles.label}>{b.endereco.condominio} • Bloco {b.endereco.bloco} • Apto {b.endereco.apartamento}</Text>
     <Text selectable style={styles.small}>{b.endereco.destinatario} • {b.endereco.telefone}</Text>
     {!!b.endereco.complemento && <Text style={styles.small}>{b.endereco.complemento}</Text>}
-    <Text style={styles.small}>Valor a combinar com a loja.</Text>
     {!!b.observacoes && <Text style={styles.subtitle}>Detalhes do cliente: {b.observacoes}</Text>}
     {!!b.mensagem_loja && <Text style={styles.subtitle}>Mensagem da loja: {b.mensagem_loja}</Text>}
     {!!b.motivo_cancelamento&&<Text style={styles.small}>Motivo do cancelamento: {b.motivo_cancelamento}</Text>}
