@@ -13,23 +13,23 @@ export interface Booking {
   motivo_reagendamento: string; motivo_cancelamento: string;
 }
 export const bookingLabels: Record<BookingStatus, string> = {
-  solicitado: "Aguardando a loja", contraproposta: "Novo horÃ¡rio proposto",
-  confirmado: "Agendamento confirmado", em_execucao: "Limpeza em andamento", concluido: "ServiÃ§o concluÃ­do",
-  recusado: "SolicitaÃ§Ã£o recusada", cancelado: "Agendamento cancelado",
+  solicitado: "Aguardando a loja", contraproposta: "Novo horário proposto",
+  confirmado: "Agendamento confirmado", em_execucao: "Limpeza em andamento", concluido: "Serviço concluído",
+  recusado: "Solicitação recusada", cancelado: "Agendamento cancelado",
 };
-// The app operates in Reserva SÃ£o LourenÃ§o (UTC-03:00), regardless of device timezone.
+// The app operates in Reserva São Lourenço (UTC-03:00), regardless of device timezone.
 export function appointmentISO(day: string, time: string): string {
   const d = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(day.trim());
   const t = /^(\d{2}):(\d{2})$/.exec(time.trim());
-  if (!d || !t) throw Error("Informe data DD/MM/AAAA e horÃ¡rio HH:MM.");
+  if (!d || !t) throw Error("Informe data DD/MM/AAAA e horário HH:MM.");
   const [, dd, mm, yyyy] = d;
   const hour = Number(t[1]), minute = Number(t[2]);
   const check = new Date(Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd)));
   if (hour > 23 || minute > 59 || check.getUTCFullYear() !== Number(yyyy) || check.getUTCMonth() !== Number(mm) - 1 || check.getUTCDate() !== Number(dd))
-    throw Error("Informe uma data e um horÃ¡rio vÃ¡lidos.");
+    throw Error("Informe uma data e um horário válidos.");
   const iso = `${yyyy}-${mm}-${dd}T${t[1]}:${t[2]}:00-03:00`;
   const value = Date.parse(iso);
-  if (value <= Date.now() || value > Date.now() + 365 * 86400000) throw Error("Escolha uma data futura, nos prÃ³ximos 12 meses.");
+  if (value <= Date.now() || value > Date.now() + 365 * 86400000) throw Error("Escolha uma data futura, nos próximos 12 meses.");
   return iso;
 }
 export function bookingDay(iso = new Date().toISOString()) { return new Date(Date.parse(iso) - 3 * 3600000).toISOString().slice(0,10); }

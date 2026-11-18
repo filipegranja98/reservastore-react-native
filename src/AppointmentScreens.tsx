@@ -18,20 +18,20 @@ import { serviceQuoteValue, appointmentISO, bookingDate, bookingLabels, suggeste
 
 async function bookingWhatsApp(b:Booking,merchant:boolean){
   const phone=merchant?b.endereco.telefone:(await api.publicRequest<Shop>(`catalogo/lojas/${b.loja}/`)).whatsapp;
-  const text=[`Agendamento #${b.id} â€¢ ${b.loja_nome}`,b.servico_nome,`SituaÃ§Ã£o: ${bookingLabels[b.status]}`,`PreferÃªncia: ${bookingDate(b.inicio_solicitado)}`,b.inicio_confirmado?`Confirmado: ${bookingDate(b.inicio_confirmado)}`:'',`${b.endereco.condominio} â€¢ Bloco ${b.endereco.bloco} â€¢ Apto ${b.endereco.apartamento}`,b.observacoes,b.orcamento_valor?`Orçamento: ${money(b.orcamento_valor)} • ${b.orcamento_status==='aceito'?'aceito':b.orcamento_status==='recusado'?'recusado':'aguardando resposta'}`:'',b.fotos.length?'Fotos do estofado disponÃ­veis no aplicativo.':'','Vamos combinar os detalhes e o valor do atendimento.'].filter(Boolean).join('\n');
+  const text=[`Agendamento #${b.id} • ${b.loja_nome}`,b.servico_nome,`Situação: ${bookingLabels[b.status]}`,`Preferência: ${bookingDate(b.inicio_solicitado)}`,b.inicio_confirmado?`Confirmado: ${bookingDate(b.inicio_confirmado)}`:'',`${b.endereco.condominio} • Bloco ${b.endereco.bloco} • Apto ${b.endereco.apartamento}`,b.observacoes,b.orcamento_valor?`Orçamento: ${money(b.orcamento_valor)} • ${b.orcamento_status==='aceito'?'aceito':b.orcamento_status==='recusado'?'recusado':'aguardando resposta'}`:'',b.fotos.length?'Fotos do estofado disponíveis no aplicativo.':'','Vamos combinar os detalhes e o valor do atendimento.'].filter(Boolean).join('\n');
   const url=orderWhatsAppLink(phone,text);
-  if(!url)throw Error('Telefone de contato ainda nÃ£o informado. A solicitaÃ§Ã£o estÃ¡ salva no aplicativo.');
+  if(!url)throw Error('Telefone de contato ainda não informado. A solicitação está salva no aplicativo.');
   if(Platform.OS==='web'&&typeof window!=='undefined')window.location.assign(url);else await Linking.openURL(url);
 }
 
 function ScheduleFields({ day, time, setDay, setTime, busy }: { day: string; time: string; setDay(v: string): void; setTime(v: string): void; busy: boolean }) {
   const [customTime, setCustomTime] = useState(false);
   return <>
-    <View style={styles.row}>{[1, 2].map(offset => <Button key={offset} title={offset === 1 ? "AmanhÃ£" : "Depois de amanhÃ£"} secondary selected={day === suggestedDay(offset)} disabled={busy} onPress={() => setDay(suggestedDay(offset))} />)}</View>
+    <View style={styles.row}>{[1, 2].map(offset => <Button key={offset} title={offset === 1 ? "Amanhã" : "Depois de amanhã"} secondary selected={day === suggestedDay(offset)} disabled={busy} onPress={() => setDay(suggestedDay(offset))} />)}</View>
     <BookingDatePicker value={day} onChange={setDay} disabled={busy}/>
-    <Text style={styles.label}>HorÃ¡rio de preferÃªncia</Text><ScrollView horizontal contentContainerStyle={{gap:8}}>{['08:00','09:00','10:00','13:00','14:00','15:00','16:00'].map(value=><Button key={value} title={value} selected={time===value} secondary={time!==value} disabled={busy} onPress={()=>setTime(value)}/>)}</ScrollView>
-    <Button title={customTime ? "Ocultar outro horÃ¡rio" : "Escolher outro horÃ¡rio"} secondary disabled={busy} onPress={() => setCustomTime(!customTime)} />
-    {customTime && <Field label="Outro horÃ¡rio" placeholder="Ex.: 14:30" value={time} onChangeText={value=>{const digits=value.replace(/\D/g,'').slice(0,4);setTime(digits.length>2?`${digits.slice(0,2)}:${digits.slice(2)}`:digits);}} keyboardType="number-pad" maxLength={5} editable={!busy} />}
+    <Text style={styles.label}>Horário de preferência</Text><ScrollView horizontal contentContainerStyle={{gap:8}}>{['08:00','09:00','10:00','13:00','14:00','15:00','16:00'].map(value=><Button key={value} title={value} selected={time===value} secondary={time!==value} disabled={busy} onPress={()=>setTime(value)}/>)}</ScrollView>
+    <Button title={customTime ? "Ocultar outro horário" : "Escolher outro horário"} secondary disabled={busy} onPress={() => setCustomTime(!customTime)} />
+    {customTime && <Field label="Outro horário" placeholder="Ex.: 14:30" value={time} onChangeText={value=>{const digits=value.replace(/\D/g,'').slice(0,4);setTime(digits.length>2?`${digits.slice(0,2)}:${digits.slice(2)}`:digits);}} keyboardType="number-pad" maxLength={5} editable={!busy} />}
   </>;
 }
 
@@ -56,9 +56,9 @@ function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, 
   useEffect(() => { if (selected === null && addresses.items.length) setSelected(addresses.items[0].id); }, [addresses.items, selected]);
   function changeStep(next: number) { setError(""); setStep(next); scroll.current?.scrollTo({y: 0, animated: true}); }
   function next() {
-    if (step === 0 && !notes.trim()) { setError("Conte o que deseja limpar. Por exemplo: um sofÃ¡ de 3 lugares ou dois colchÃµes."); return; }
-    if (step === 1 && !selected) { setError("Selecione um endereÃ§o ou toque em Cadastrar endereÃ§o para informar onde serÃ¡ a limpeza."); return; }
-    if (step === 1 && adding) { setError("Salve o novo endereÃ§o ou feche o cadastro para usar o endereÃ§o selecionado."); return; }
+    if (step === 0 && !notes.trim()) { setError("Conte o que deseja limpar. Por exemplo: um sofá de 3 lugares ou dois colchões."); return; }
+    if (step === 1 && !selected) { setError("Selecione um endereço ou toque em Cadastrar endereço para informar onde será a limpeza."); return; }
+    if (step === 1 && adding) { setError("Salve o novo endereço ou feche o cadastro para usar o endereço selecionado."); return; }
     changeStep(step + 1);
   }
   async function saveAddress() {
@@ -69,55 +69,55 @@ function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, 
   async function submit() {
     if (lock.current) return; lock.current = true; setBusy(true); setError("");
     try {
-      if (!notes.trim()) { setStep(0); throw Error("Conte o que vocÃª deseja limpar antes de enviar."); }
-      if (!selected) { setStep(1); throw Error("Selecione o endereÃ§o onde serÃ¡ a limpeza."); }
-      if (!day) throw Error("Escolha no calendÃ¡rio o dia em que prefere receber a limpeza.");
-      if (!time) throw Error("Selecione um horÃ¡rio de preferÃªncia para continuar.");
+      if (!notes.trim()) { setStep(0); throw Error("Conte o que você deseja limpar antes de enviar."); }
+      if (!selected) { setStep(1); throw Error("Selecione o endereço onde será a limpeza."); }
+      if (!day) throw Error("Escolha no calendário o dia em que prefere receber a limpeza.");
+      if (!time) throw Error("Selecione um horário de preferência para continuar.");
       let result = await api.request<Booking>("agendamentos/", "POST", { servico: route.params.service, endereco: selected, inicio_solicitado: appointmentISO(day, time), observacoes: notes.trim(), chave: key.current });
       let failed=0;
       for(const photo of photos){try{result=await uploadBookingPhoto(result.id,photo);}catch{failed++;}}
-      let notice=`SolicitaÃ§Ã£o #${result.id} enviada. Aguarde a confirmaÃ§Ã£o da loja.`;
-      if(failed)notice+=` ${failed} foto(s) nÃ£o foram enviadas. VocÃª pode adicionÃ¡-las no cartÃ£o do atendimento.`;
+      let notice=`Solicitação #${result.id} enviada. Aguarde a confirmação da loja.`;
+      if(failed)notice+=` ${failed} foto(s) não foram enviadas. Você pode adicioná-las no cartão do atendimento.`;
       navigation.replace("Appointments", { notice });
       try{await bookingWhatsApp(result,false);}catch{/* The saved request remains accessible even without WhatsApp. */}
     } catch (e) { setError((e as Error).message); } finally { lock.current = false; setBusy(false); }
   }
   return <ScrollView ref={scroll} style={styles.screen} contentContainerStyle={[styles.content,{width:'100%',maxWidth:600,alignSelf:'center'}]} keyboardShouldPersistTaps="handled">
-    <Text style={styles.small}>{route.params.name} â€¢ Etapa {step + 1} de 3</Text>
+    <Text style={styles.small}>{route.params.name} • Etapa {step + 1} de 3</Text>
     <View accessibilityLabel={`Etapa ${step + 1} de 3`} style={{flexDirection:'row',gap:6}}>{[0,1,2].map(index=><View key={index} style={{flex:1,height:4,borderRadius:4,backgroundColor:index<=step?'#17624E':'#DCE4DC'}}/>)}</View>
-    <Text accessibilityRole="header" style={styles.title}>{['O que vamos limpar?', 'Onde serÃ¡ a limpeza?', 'Qual o melhor dia?'][step]}</Text>
+    <Text accessibilityRole="header" style={styles.title}>{['O que vamos limpar?', 'Onde será a limpeza?', 'Qual o melhor dia?'][step]}</Text>
     {step === 0 && <View style={{gap:16}}>
-      <Field label="O que vocÃª quer limpar?" placeholder="Ex.: 1 sofÃ¡ de 3 lugares e 2 cadeiras" value={notes} onChangeText={setNotes} multiline maxLength={5000} editable={!busy}/>
+      <Field label="O que você quer limpar?" placeholder="Ex.: 1 sofá de 3 lugares e 2 cadeiras" value={notes} onChangeText={setNotes} multiline maxLength={5000} editable={!busy}/>
       <DraftBookingPhotos photos={photos} onChange={setPhotos} busy={busy}/>
     </View>}
     {step === 1 && <View style={{gap:12}}>
-      {addresses.busy && !list.length && <Text style={styles.small}>Buscando seus endereÃ§osâ€¦</Text>}
-      {!addresses.busy && !addresses.error && !list.length && <Text style={styles.subtitle}>Cadastre o endereÃ§o para receber o atendimento.</Text>}
-      {list.map(address => <Button key={address.id} title={`${address.condominio} â€¢ Bloco ${address.bloco} â€¢ Apto ${address.apartamento}`} selected={selected === address.id} secondary={selected !== address.id} disabled={busy} onPress={() => setSelected(address.id)} />)}
+      {addresses.busy && !list.length && <Text style={styles.small}>Buscando seus endereços…</Text>}
+      {!addresses.busy && !addresses.error && !list.length && <Text style={styles.subtitle}>Cadastre o endereço para receber o atendimento.</Text>}
+      {list.map(address => <Button key={address.id} title={`${address.condominio} • Bloco ${address.bloco} • Apto ${address.apartamento}`} selected={selected === address.id} secondary={selected !== address.id} disabled={busy} onPress={() => setSelected(address.id)} />)}
       {!!addresses.error && <Notice message={addresses.error} retry={addresses.reload} />}
-      {addresses.hasMore && <Button title="Mais endereÃ§os" secondary disabled={busy} onPress={addresses.more} />}
-      <Button title={adding ? "Fechar novo endereÃ§o" : "Cadastrar endereÃ§o"} secondary disabled={busy} onPress={() => setAdding(!adding)} />
+      {addresses.hasMore && <Button title="Mais endereços" secondary disabled={busy} onPress={addresses.more} />}
+      <Button title={adding ? "Fechar novo endereço" : "Cadastrar endereço"} secondary disabled={busy} onPress={() => setAdding(!adding)} />
       {adding && <>
         <CondominiumPicker value={draft.condominio} disabled={busy} onChange={value => setDraft(old => ({ ...old, condominio: value }))} />
         {([['bloco','Bloco'],['apartamento','Apartamento'],['destinatario','Nome de quem recebe'],['telefone','Telefone com DDD'],['complemento','Complemento (opcional)']] as const).map(([field,label]) => <Field key={field} label={label} value={draft[field]} onChangeText={value => setDraft(old => ({...old,[field]:value}))} editable={!busy} keyboardType={field === 'telefone' ? 'phone-pad' : 'default'} />)}
-        <Button title="Salvar endereÃ§o" busy={busy} disabled={!draft.condominio || !draft.bloco.trim() || !draft.apartamento.trim() || !draft.destinatario.trim() || !draft.telefone.trim()} onPress={() => void saveAddress()} />
+        <Button title="Salvar endereço" busy={busy} disabled={!draft.condominio || !draft.bloco.trim() || !draft.apartamento.trim() || !draft.destinatario.trim() || !draft.telefone.trim()} onPress={() => void saveAddress()} />
       </>}
 
     </View>}
     {step === 2 && <View style={{gap:16}}>
-      <Text style={styles.small}>Escolha sua preferÃªncia. A loja vai confirmar a disponibilidade.</Text>
+      <Text style={styles.small}>Escolha sua preferência. A loja vai confirmar a disponibilidade.</Text>
       <ScheduleFields day={day} time={time} setDay={setDay} setTime={setTime} busy={busy}/>
       <View style={styles.card}>
         <Text style={styles.label}>Seu pedido de atendimento</Text>
         <Text style={styles.small}>{notes}</Text>
         <Text style={styles.small}>{photos.length ? `${photos.length} foto(s) anexada(s)` : 'Sem fotos'}</Text>
-        {list.filter(a=>a.id===selected).map(a=><Text key={a.id} style={styles.small}>{a.condominio} â€¢ Bloco {a.bloco} â€¢ Apto {a.apartamento}</Text>)}
+        {list.filter(a=>a.id===selected).map(a=><Text key={a.id} style={styles.small}>{a.condominio} • Bloco {a.bloco} • Apto {a.apartamento}</Text>)}
       </View>
-      <Text style={styles.small}>Ao enviar, sua solicitaÃ§Ã£o fica salva e o WhatsApp abre para conversar com a loja.</Text>
+      <Text style={styles.small}>Ao enviar, sua solicitação fica salva e o WhatsApp abre para conversar com a loja.</Text>
     </View>}
     {!!error && <Notice message={error}/>}
     <Button title={step === 2 ? 'Solicitar agendamento' : 'Continuar'} busy={busy} onPress={() => step === 2 ? void submit() : next()}/>
-    {step > 0 && <Button title="Voltar Ã  etapa anterior" secondary disabled={busy} onPress={()=>changeStep(step-1)}/>}
+    {step > 0 && <Button title="Voltar à etapa anterior" secondary disabled={busy} onPress={()=>changeStep(step-1)}/>}
   </ScrollView>;
 }
 
@@ -136,27 +136,27 @@ function BookingList({ merchant, notice }: { merchant: boolean; notice?: string 
   async function refresh(){await page.reload();setAttempt(v=>v+1);if(detail){try{setDetail(await api.request<Booking>(`agendamentos/${detail.id}/`));}catch{setDetail(null);}}}
   function changed(b:Booking){setFeedback(bookingLabels[b.status]);if(detail)setDetail(b);}
   return <ScrollView style={styles.screen} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={page.busy} onRefresh={()=>void refresh()} />}>
-    <Text style={styles.eyebrow}>{merchant?'SOLICITAÃ‡Ã•ES E ATENDIMENTOS':'MEUS SERVIÃ‡OS'}</Text><Text style={styles.title}>{merchant ? "Agenda de serviÃ§os" : "Meus agendamentos"}</Text>
+    <Text style={styles.eyebrow}>{merchant?'SOLICITAÇÕES E ATENDIMENTOS':'MEUS SERVIÇOS'}</Text><Text style={styles.title}>{merchant ? "Agenda de serviços" : "Meus agendamentos"}</Text>
     {!!notice && <Text accessibilityLiveRegion="polite" style={styles.label}>{notice}</Text>}
     {!!feedback&&<Text accessibilityLiveRegion="polite" style={styles.label}>{feedback}</Text>}
-    <View style={[styles.row,{flexWrap:'wrap',gap:10}]}>{[['total','SolicitaÃ§Ãµes'],['agendados','Agendados'],['concluidos','ConcluÃ­dos']].map(([key,label])=><View key={key} style={[styles.card,{flexGrow:1,padding:14}]}><Text style={styles.section}>{summary?summary[key as 'total'|'agendados'|'concluidos']:'â€”'}</Text><Text style={styles.small}>{label}</Text></View>)}</View>
-    <Text style={styles.small}>{merchant ? "Responda Ã s solicitaÃ§Ãµes e combine horÃ¡rios com seus clientes." : "Acompanhe a resposta da loja e aceite o novo horÃ¡rio quando necessÃ¡rio."}</Text>
+    <View style={[styles.row,{flexWrap:'wrap',gap:10}]}>{[['total','Solicitações'],['agendados','Agendados'],['concluidos','Concluídos']].map(([key,label])=><View key={key} style={[styles.card,{flexGrow:1,padding:14}]}><Text style={styles.section}>{summary?summary[key as 'total'|'agendados'|'concluidos']:'—'}</Text><Text style={styles.small}>{label}</Text></View>)}</View>
+    <Text style={styles.small}>{merchant ? "Responda às solicitações e combine horários com seus clientes." : "Acompanhe a resposta da loja e aceite o novo horário quando necessário."}</Text>
     <View style={[styles.row,{gap:8}]}>{([['list','Lista'],['day','Dia'],['week','Semana']] as const).map(([value,label])=><Button key={value} title={label} selected={view===value} secondary={view!==value} onPress={()=>setView(value)}/>)}</View>
-    {view!=='list'?<><BookingAgenda view={view} attempt={attempt} onSelect={setDetail}/><Button title={`Ver solicitaÃ§Ãµes pendentes${summary?` â€¢ ${summary.pendentes}`:''}`} secondary onPress={()=>{setFilter('pendentes');setView('list');}}/></>:<>
-    <Field label={merchant?'Buscar cliente, telefone, serviÃ§o ou condomÃ­nio':'Buscar serviÃ§o ou condomÃ­nio'} value={query} onChangeText={setQuery} onSubmitEditing={()=>setSearch(query.trim())} returnKeyType="search"/><Button title="Buscar atendimentos" secondary onPress={()=>setSearch(query.trim())}/>
-    <ScrollView horizontal contentContainerStyle={{gap:8}}>{[['pendentes','Pendentes'],['confirmado','Confirmados'],['historico','HistÃ³rico']].map(([value,label]) => <Button key={value} title={label} secondary={filter !== value} selected={filter === value} onPress={() => setFilter(value)} />)}</ScrollView>
+    {view!=='list'?<><BookingAgenda view={view} attempt={attempt} onSelect={setDetail}/><Button title={`Ver solicitações pendentes${summary?` • ${summary.pendentes}`:''}`} secondary onPress={()=>{setFilter('pendentes');setView('list');}}/></>:<>
+    <Field label={merchant?'Buscar cliente, telefone, serviço ou condomínio':'Buscar serviço ou condomínio'} value={query} onChangeText={setQuery} onSubmitEditing={()=>setSearch(query.trim())} returnKeyType="search"/><Button title="Buscar atendimentos" secondary onPress={()=>setSearch(query.trim())}/>
+    <ScrollView horizontal contentContainerStyle={{gap:8}}>{[['pendentes','Pendentes'],['confirmado','Confirmados'],['historico','Histórico']].map(([value,label]) => <Button key={value} title={label} secondary={filter !== value} selected={filter === value} onPress={() => setFilter(value)} />)}</ScrollView>
     {!!page.error && <Notice message={page.error} retry={page.reload} />}
     {!page.busy && !page.error && !page.items.length && <Text style={styles.subtitle}>Nenhum agendamento nesta etapa.</Text>}
     {page.items.map(booking => <BookingCard key={`${booking.id}-${booking.versao}`} booking={booking} merchant={merchant} refresh={refresh} onChanged={changed} />)}
     {page.hasMore && <Button title="Carregar mais agendamentos" secondary busy={page.busy} onPress={page.more} />}
     </>}
     <Button title="Atualizar agenda" secondary busy={page.busy} onPress={()=>void refresh()} />
-    <Modal visible={!!detail} animationType="slide" onRequestClose={()=>setDetail(null)}><SafeAreaView style={styles.screen}><ScrollView contentContainerStyle={styles.content}><Button title="Voltar Ã  agenda" secondary onPress={()=>setDetail(null)}/>{detail&&<BookingCard key={`${detail.id}-${detail.versao}`} booking={detail} merchant={merchant} refresh={refresh} onChanged={changed}/>}</ScrollView></SafeAreaView></Modal>
+    <Modal visible={!!detail} animationType="slide" onRequestClose={()=>setDetail(null)}><SafeAreaView style={styles.screen}><ScrollView contentContainerStyle={styles.content}><Button title="Voltar à agenda" secondary onPress={()=>setDetail(null)}/>{detail&&<BookingCard key={`${detail.id}-${detail.versao}`} booking={detail} merchant={merchant} refresh={refresh} onChanged={changed}/>}</ScrollView></SafeAreaView></Modal>
   </ScrollView>;
 }
 function BookingAddressChoice({selected,onSelect,busy}:{selected:string;onSelect(v:string):void;busy:boolean}){
   const addresses=usePage<Address>('enderecos/',true);
-  return <>{addresses.items.map(a=><Button key={a.id} title={`${a.condominio} â€¢ Bloco ${a.bloco} â€¢ Apto ${a.apartamento}`} selected={selected===String(a.id)} secondary disabled={busy} onPress={()=>onSelect(String(a.id))}/>)}{!!addresses.error&&<Notice message={addresses.error} retry={addresses.reload}/>} {addresses.hasMore&&<Button title="Mais endereÃ§os" secondary onPress={addresses.more}/>}</>;
+  return <>{addresses.items.map(a=><Button key={a.id} title={`${a.condominio} • Bloco ${a.bloco} • Apto ${a.apartamento}`} selected={selected===String(a.id)} secondary disabled={busy} onPress={()=>onSelect(String(a.id))}/>)}{!!addresses.error&&<Notice message={addresses.error} retry={addresses.reload}/>} {addresses.hasMore&&<Button title="Mais endereços" secondary onPress={addresses.more}/>}</>;
 }
 function BookingCard({ booking: b, merchant, refresh, onChanged }: { booking: Booking; merchant: boolean; refresh(): Promise<void>;onChanged(b:Booking):void }) {
   const [proposing, setProposing] = useState(false), [day,setDay] = useState(""), [time,setTime] = useState("");
@@ -185,12 +185,12 @@ function BookingCard({ booking: b, merchant, refresh, onChanged }: { booking: Bo
     <View style={[styles.badge,{backgroundColor:b.status==='confirmado'?'#DDF3E4':b.status==='contraproposta'?'#FFF0C2':'#EAF1E9'}]}><Text style={styles.label}>{bookingLabels[b.status]}</Text></View>
     <Text style={styles.label}>{merchant ? b.cliente_nome : b.loja_nome}</Text>
     <Text style={styles.subtitle}>Solicitado: {bookingDate(b.inicio_solicitado)}</Text>
-    {!!b.inicio_proposto && <Text style={styles.label}>Novo horÃ¡rio sugerido: {bookingDate(b.inicio_proposto)}</Text>}
+    {!!b.inicio_proposto && <Text style={styles.label}>Novo horário sugerido: {bookingDate(b.inicio_proposto)}</Text>}
     {!!b.inicio_confirmado && <Text style={styles.section}>Confirmado: {bookingDate(b.inicio_confirmado)}</Text>}
-    {!!b.inicio_confirmado&&<Text style={styles.label}>AtÃ© {bookingTime(bookingEnd(b))} â€¢ {b.duracao_minutos} minutos reservados</Text>}
-    {!!b.inicio_reagendamento&&<View style={[styles.card,{backgroundColor:'#FFF0C2'}]}><Text style={styles.label}>{b.reagendamento_origem==='cliente'?'Cliente solicitou reagendamento':'Loja sugeriu novo horÃ¡rio'}</Text><Text style={styles.label}>{bookingDate(b.inicio_reagendamento)}</Text>{!!b.motivo_reagendamento&&<Text style={styles.small}>{b.motivo_reagendamento}</Text>}<Text style={styles.small}>O horÃ¡rio original permanece reservado atÃ© a confirmaÃ§Ã£o da mudanÃ§a.</Text></View>}
-    <Text selectable style={styles.label}>{b.endereco.condominio} â€¢ Bloco {b.endereco.bloco} â€¢ Apto {b.endereco.apartamento}</Text>
-    <Text selectable style={styles.small}>{b.endereco.destinatario} â€¢ {b.endereco.telefone}</Text>
+    {!!b.inicio_confirmado&&<Text style={styles.label}>Até {bookingTime(bookingEnd(b))} • {b.duracao_minutos} minutos reservados</Text>}
+    {!!b.inicio_reagendamento&&<View style={[styles.card,{backgroundColor:'#FFF0C2'}]}><Text style={styles.label}>{b.reagendamento_origem==='cliente'?'Cliente solicitou reagendamento':'Loja sugeriu novo horário'}</Text><Text style={styles.label}>{bookingDate(b.inicio_reagendamento)}</Text>{!!b.motivo_reagendamento&&<Text style={styles.small}>{b.motivo_reagendamento}</Text>}<Text style={styles.small}>O horário original permanece reservado até a confirmação da mudança.</Text></View>}
+    <Text selectable style={styles.label}>{b.endereco.condominio} • Bloco {b.endereco.bloco} • Apto {b.endereco.apartamento}</Text>
+    <Text selectable style={styles.small}>{b.endereco.destinatario} • {b.endereco.telefone}</Text>
     {!!b.endereco.complemento && <Text style={styles.small}>{b.endereco.complemento}</Text>}
     {!!b.observacoes && <Text style={styles.subtitle}>Detalhes do cliente: {b.observacoes}</Text>}
     {!!b.mensagem_loja && <Text style={styles.subtitle}>Mensagem da loja: {b.mensagem_loja}</Text>}
@@ -219,22 +219,22 @@ function BookingCard({ booking: b, merchant, refresh, onChanged }: { booking: Bo
       {merchant&&b.orcamento_status==='aceito'&&<Text style={styles.small}>O valor aprovado fica registrado e não pode ser alterado.</Text>}
     </View>}
 
-    {!merchant&&(pending||b.status==='confirmado')&&!['pendente','aceito'].includes(b.orcamento_status??'')&&<><Button title={editing?'Fechar ediÃ§Ã£o':'Editar dados da solicitaÃ§Ã£o'} secondary disabled={busy} onPress={()=>setEditing(!editing)}/>{editing&&<><Field label="DescriÃ§Ã£o do serviÃ§o" value={description} onChangeText={setDescription} multiline maxLength={5000} editable={!busy}/><Text style={styles.label}>Trocar endereÃ§o (opcional)</Text><BookingAddressChoice selected={editAddress} onSelect={setEditAddress} busy={busy}/><Button title="Salvar dados da solicitaÃ§Ã£o" busy={busy} onPress={()=>void saveDetails()}/></>}</>}
+    {!merchant&&(pending||b.status==='confirmado')&&!['pendente','aceito'].includes(b.orcamento_status??'')&&<><Button title={editing?'Fechar edição':'Editar dados da solicitação'} secondary disabled={busy} onPress={()=>setEditing(!editing)}/>{editing&&<><Field label="Descrição do serviço" value={description} onChangeText={setDescription} multiline maxLength={5000} editable={!busy}/><Text style={styles.label}>Trocar endereço (opcional)</Text><BookingAddressChoice selected={editAddress} onSelect={setEditAddress} busy={busy}/><Button title="Salvar dados da solicitação" busy={busy} onPress={()=>void saveDetails()}/></>}</>}
     <Button title={merchant?'Combinar detalhes com o cliente no WhatsApp':'Combinar detalhes com a loja no WhatsApp'} secondary disabled={busy} onPress={()=>void bookingWhatsApp(b,merchant).catch(e=>setError(e.message))}/>
     {merchant && (pending||b.status==='confirmado') && <>
       <Field label="Mensagem ao cliente (opcional)" value={message} onChangeText={setMessage} multiline maxLength={1000} editable={!busy} />
-      <Field label="DuraÃ§Ã£o prevista em minutos (inclua deslocamento)" value={duration} onChangeText={setDuration} keyboardType="number-pad" maxLength={3} editable={!busy}/><Text style={styles.small}>De 15 a 720 minutos. Atendimentos sobrepostos serÃ£o bloqueados.</Text>
-      {b.status==='solicitado' && <Button title="Aceitar data e horÃ¡rio solicitados" busy={busy} onPress={() => void respond('confirmar')} />}
-      <Button title={proposing?'Fechar proposta':'Propor outro horÃ¡rio'} secondary disabled={busy} onPress={() => setProposing(!proposing)} />
-      {proposing && <><ScheduleFields day={day} time={time} setDay={setDay} setTime={setTime} busy={busy} /><Button title="Enviar novo horÃ¡rio ao cliente" busy={busy} disabled={!day||!time} onPress={() => void respond('propor')} /></>}
-      {pending&&<Button title="Recusar solicitaÃ§Ã£o" secondary busy={busy} onPress={() => void respond('recusar')} />}
-      {b.status==='confirmado'&&b.reagendamento_origem==='cliente'&&<><Button title="Confirmar reagendamento solicitado" busy={busy} onPress={()=>void respond('confirmar')}/><Button title="Manter horÃ¡rio original" secondary busy={busy} onPress={()=>void respond('recusar_reagendamento')}/></>}
+      <Field label="Duração prevista em minutos (inclua deslocamento)" value={duration} onChangeText={setDuration} keyboardType="number-pad" maxLength={3} editable={!busy}/><Text style={styles.small}>De 15 a 720 minutos. Atendimentos sobrepostos serão bloqueados.</Text>
+      {b.status==='solicitado' && <Button title="Aceitar data e horário solicitados" busy={busy} onPress={() => void respond('confirmar')} />}
+      <Button title={proposing?'Fechar proposta':'Propor outro horário'} secondary disabled={busy} onPress={() => setProposing(!proposing)} />
+      {proposing && <><ScheduleFields day={day} time={time} setDay={setDay} setTime={setTime} busy={busy} /><Button title="Enviar novo horário ao cliente" busy={busy} disabled={!day||!time} onPress={() => void respond('propor')} /></>}
+      {pending&&<Button title="Recusar solicitação" secondary busy={busy} onPress={() => void respond('recusar')} />}
+      {b.status==='confirmado'&&b.reagendamento_origem==='cliente'&&<><Button title="Confirmar reagendamento solicitado" busy={busy} onPress={()=>void respond('confirmar')}/><Button title="Manter horário original" secondary busy={busy} onPress={()=>void respond('recusar_reagendamento')}/></>}
     </>}
-    {!merchant && b.status==='contraproposta' && <><Text style={styles.small}>A loja sugeriu outro horÃ¡rio. Confirme abaixo para reservar.</Text><Button title="Aceitar novo horÃ¡rio" busy={busy} onPress={() => void respond('aceitar_proposta')} /></>}
-    {!merchant&&b.status==='confirmado'&&b.reagendamento_origem==='loja'&&<><Button title="Aceitar reagendamento proposto" busy={busy} onPress={()=>void respond('aceitar_proposta')}/><Button title="Manter horÃ¡rio original" secondary busy={busy} onPress={()=>void respond('recusar_reagendamento')}/></>}
-    {!merchant&&(pending||b.status==='confirmado')&&<><Button title={rescheduling?'Fechar reagendamento':'Solicitar reagendamento'} secondary disabled={busy} onPress={()=>setRescheduling(!rescheduling)}/>{rescheduling&&<><ScheduleFields day={day} time={time} setDay={setDay} setTime={setTime} busy={busy}/><Field label="Motivo da mudanÃ§a (opcional)" value={message} onChangeText={setMessage} maxLength={1000} editable={!busy}/><Button title="Enviar pedido de reagendamento" disabled={!day||!time} busy={busy} onPress={()=>void respond('reagendar')}/></>}</>}
+    {!merchant && b.status==='contraproposta' && <><Text style={styles.small}>A loja sugeriu outro horário. Confirme abaixo para reservar.</Text><Button title="Aceitar novo horário" busy={busy} onPress={() => void respond('aceitar_proposta')} /></>}
+    {!merchant&&b.status==='confirmado'&&b.reagendamento_origem==='loja'&&<><Button title="Aceitar reagendamento proposto" busy={busy} onPress={()=>void respond('aceitar_proposta')}/><Button title="Manter horário original" secondary busy={busy} onPress={()=>void respond('recusar_reagendamento')}/></>}
+    {!merchant&&(pending||b.status==='confirmado')&&<><Button title={rescheduling?'Fechar reagendamento':'Solicitar reagendamento'} secondary disabled={busy} onPress={()=>setRescheduling(!rescheduling)}/>{rescheduling&&<><ScheduleFields day={day} time={time} setDay={setDay} setTime={setTime} busy={busy}/><Field label="Motivo da mudança (opcional)" value={message} onChangeText={setMessage} maxLength={1000} editable={!busy}/><Button title="Enviar pedido de reagendamento" disabled={!day||!time} busy={busy} onPress={()=>void respond('reagendar')}/></>}</>}
     {merchant&&b.status==='confirmado'&&<Button title="Iniciar limpeza" disabled={Date.parse(b.inicio_confirmado!)>Date.now()||['pendente','recusado'].includes(b.orcamento_status??'')} busy={busy} onPress={()=>void respond('iniciar')}/>}
-    {merchant && ['confirmado','em_execucao'].includes(b.status) && <Button title="Confirmar conclusÃ£o da limpeza" disabled={Date.parse(b.inicio_confirmado!)>Date.now()||['pendente','recusado'].includes(b.orcamento_status??'')} busy={busy} onPress={() => void respond('concluir')} />}
+    {merchant && ['confirmado','em_execucao'].includes(b.status) && <Button title="Confirmar conclusão da limpeza" disabled={Date.parse(b.inicio_confirmado!)>Date.now()||['pendente','recusado'].includes(b.orcamento_status??'')} busy={busy} onPress={() => void respond('concluir')} />}
     {(pending||b.status==='confirmado') && <><Button title={cancel?'Voltar sem cancelar':'Cancelar agendamento'} secondary disabled={busy} onPress={()=>setCancel(!cancel)} />{cancel&&<><Field label="Motivo do cancelamento" value={message} onChangeText={setMessage} maxLength={1000} editable={!busy}/><Button title="Confirmar cancelamento" disabled={!message.trim()} busy={busy} onPress={()=>void respond('cancelar')}/></>}</>}
     {!!error && <Notice message={error} retry={refresh} />}
   </View>;
