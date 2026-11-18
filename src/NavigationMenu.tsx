@@ -24,6 +24,7 @@ export function NavigationMenu({ color = colors.ink }: { color?: string }) {
       | "Appointments"
       | "MerchantCategories"
       | "MerchantCatalog"
+      | "MerchantPromotions"
       | "Login"
       | "Register",
   ) {
@@ -153,6 +154,7 @@ export function NavigationMenu({ color = colors.ink }: { color?: string }) {
                   onPress={() => go("MerchantCatalog")}
                 />
               )}
+              {account?.papel === "lojista" && <Button title="Promoções da loja" secondary disabled={busy} onPress={()=>go("MerchantPromotions")}/>}
               {account && (
                 <Button title={account.papel === "lojista" ? "Agenda de serviços" : "Meus agendamentos"} secondary disabled={busy} onPress={() => go("Appointments")} />
               )}

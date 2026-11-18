@@ -1,3 +1,4 @@
+import {MerchantPromotionsScreen} from "./src/PromotionScreens";
 import {BookingCancellationNotice} from "./src/BookingCancellationNotice";
 import { PasswordRecoveryScreen } from "./src/PasswordRecoveryScreen";
 import { ScheduleServiceScreen, AppointmentsScreen } from "./src/AppointmentScreens";
@@ -57,6 +58,7 @@ function Navigation() {
           contentStyle: { backgroundColor: colors.cream },
         }}
       >
+        <Stack.Screen name="MerchantPromotions" component={MerchantPromotionsScreen} options={{title:"Promoções da loja"}}/>
         <Stack.Screen name="ScheduleService" component={ScheduleServiceScreen} options={{title:"Solicitar agendamento"}} />
         <Stack.Screen name="Appointments" component={AppointmentsScreen} options={{title:"Agendamentos"}} />
         <Stack.Screen

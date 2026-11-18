@@ -1,3 +1,4 @@
+import {StorePromotions} from "./PromotionScreens";
 import { StoreLogo } from "./StoreLogo";
 import { PasswordField } from "./PasswordField";
 import {StoreContact} from "./StoreContact";
@@ -65,6 +66,7 @@ export type Routes = {
   Account: undefined;
   MerchantCategories: undefined;
   MerchantCatalog: undefined;
+  MerchantPromotions: undefined;
   PasswordRecovery: undefined;
 };
 type Props<T extends keyof Routes> = NativeStackScreenProps<Routes, T>;
@@ -270,6 +272,7 @@ export function ShopScreen({ route, navigation }: Props<"Shop">) {
             <View style={{ gap: 18, marginBottom: 18 }}>
               <StoreHeading name={shop.nome} logo={shop.logo} />
               <StoreStatus shop={shop} />
+              <StorePromotions shop={id} attempt={attempt}/>
               {!!cart.error && (
                 <Notice message={cart.error} retry={() => void cart.reload()} />
               )}

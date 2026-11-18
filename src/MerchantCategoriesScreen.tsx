@@ -106,6 +106,7 @@ function Dashboard({ navigation }: Props) {
               title={shop.tipo_catalogo === "servicos" ? "Ver agenda e responder solicitações" : "Acompanhar e gerenciar pedidos"}
               onPress={() => shop.tipo_catalogo === "servicos" ? navigation.navigate("Appointments") : navigation.navigate("Orders")}
             />
+            <Button title="Gerenciar promoções" secondary onPress={()=>navigation.navigate("MerchantPromotions")}/>
             <View style={styles.card}>
               <Text style={styles.section}>
                 {shop.tipo_catalogo === "servicos"
