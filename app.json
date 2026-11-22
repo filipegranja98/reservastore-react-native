@@ -20,7 +20,13 @@
       ]
     ],
     "android": {
-      "package": "com.anonymous.reservastorecliente"
-    }
+      "package": "com.anonymous.reservastorecliente",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/reserva-adaptive-icon.png",
+        "monochromeImage": "./assets/reserva-adaptive-icon.png",
+        "backgroundColor": "#F5F5EF"
+      }
+    },
+    "icon": "./assets/reserva-app-icon.png"
   }
 }
