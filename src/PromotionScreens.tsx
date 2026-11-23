@@ -1,5 +1,5 @@
 import {catalogPrice} from './merchant';
-import React,{useCallback,useRef,useState} from 'react';
+import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {Image,Modal,Platform,ScrollView,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useFocusEffect} from '@react-navigation/native';
@@ -16,7 +16,8 @@ import {bookingDay,suggestedDay} from './appointments';
 import {promotionDate,promotionExpiry,type Promotion} from './promotions';
 
 type Photo={uri:string;type:string;name:string;file?:Blob};
-export function StorePromotions({shop,attempt,onProduct}:{shop:number;attempt:number;onProduct?(id:number):void}){
+export function StorePromotions({shop,attempt,services=false,canSchedule=false,disabled=false,busy=false,onRequest,onService}:{shop:number;attempt:number;services?:boolean;canSchedule?:boolean;disabled?:boolean;busy?:boolean;onRequest(p:Promotion):void;onService(p:Promotion,item:Product):void}){
+ const [choosing,setChoosing]=useState<Promotion|null>(null);
  const page=usePage<Promotion>(`catalogo/lojas/${shop}/promocoes/`);
  useFocusEffect(useCallback(()=>{void page.reload();const timer=setInterval(()=>void page.reload(),60000);return()=>clearInterval(timer);},[page.reload,attempt]));
  const visible=page.items.filter(item=>item.validade>=bookingDay());
@@ -27,9 +28,21 @@ export function StorePromotions({shop,attempt,onProduct}:{shop:number;attempt:nu
    <Text style={styles.section}>{p.titulo}</Text>{!!p.descricao&&<Text style={styles.subtitle}>{p.descricao}</Text>}
    {!!p.preco_promocional&&<View style={{gap:5}}><Text style={[styles.small,{textDecorationLine:'line-through'}]}>De {money(p.preco_anterior!)}</Text><Text style={styles.section}>Por {money(p.preco_promocional)}</Text></View>}
    <Text style={styles.small}>Válida até {promotionExpiry(p.validade)}</Text>
-   {!!p.produto&&onProduct&&<Button title="Ver produto da promoção" secondary onPress={()=>onProduct(p.produto!)}/>}
+   <Button title={services?'Solicitar esta promoção':p.produto?'Adicionar promoção ao carrinho':'Solicitar promoção no WhatsApp'} disabled={disabled} busy={busy} onPress={()=>services&&canSchedule?setChoosing(p):onRequest(p)}/>
   </View>)}{page.hasMore&&<Button title="Mais promoções" secondary busy={page.busy} onPress={page.more}/>} 
+  <Modal visible={!!choosing} animationType="slide" onRequestClose={()=>setChoosing(null)}><SafeAreaView style={styles.screen}>{choosing&&<PromotionServiceChoice key={choosing.id} shop={shop} promotion={choosing} onClose={()=>setChoosing(null)} onChoose={item=>{onService(choosing,item);setChoosing(null);}}/>}</SafeAreaView></Modal>
  </View>;
+}
+function PromotionServiceChoice({shop,promotion,onClose,onChoose}:{shop:number;promotion:Promotion;onClose():void;onChoose(item:Product):void}){
+ const page=usePage<Product>(`catalogo/lojas/${shop}/produtos/`);
+ const chosen=useRef(false);
+ useEffect(()=>{if(!page.busy&&!page.error&&page.items.length===1&&!page.hasMore&&!chosen.current){chosen.current=true;onChoose(page.items[0]);}},[page.busy,page.error,page.items,page.hasMore,onChoose]);
+ return <ScrollView contentContainerStyle={styles.content}><Text style={styles.title}>{promotion.titulo}</Text><Text style={styles.subtitle}>Qual serviço você quer solicitar com esta promoção?</Text>
+  {page.busy&&<Text style={styles.small}>Buscando serviços…</Text>}{!!page.error&&<Notice message={page.error} retry={page.reload}/>}
+  {!page.busy&&!page.error&&!page.items.length&&<Text style={styles.small}>A loja ainda não tem serviços disponíveis para agendamento. Entre em contato com ela pelo WhatsApp.</Text>}
+  {page.items.map(item=><Button key={item.id} title={item.nome} onPress={()=>{if(!chosen.current){chosen.current=true;onChoose(item);}}}/>)}
+  {page.hasMore&&<Button title="Mais serviços" secondary busy={page.busy} onPress={page.more}/>}<Button title="Voltar à promoção" secondary onPress={onClose}/>
+ </ScrollView>;
 }
 export function MerchantPromotionsScreen({navigation}:NativeStackScreenProps<Routes,'MerchantPromotions'>){
  const {account}=useSession();

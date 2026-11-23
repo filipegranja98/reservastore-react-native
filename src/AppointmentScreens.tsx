@@ -1,3 +1,4 @@
+import {bookingPromotionNotes} from "./promotions";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View, RefreshControl, Modal, Linking, Platform, AppState } from "react-native";
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -38,7 +39,7 @@ function ScheduleFields({ day, time, setDay, setTime, busy }: { day: string; tim
 export function ScheduleServiceScreen({ route, navigation }: NativeStackScreenProps<Routes, "ScheduleService">) {
   const { account } = useSession();
   if (!account || account.papel !== "cliente") return <View style={[styles.screen, styles.content]}><Text style={styles.section}>Entre com uma conta de cliente para agendar.</Text><Button title="Entrar" onPress={() => navigation.navigate("Login", { returnTo: { screen: "Shop", id: route.params.shop, name: route.params.name } })} /></View>;
-  return <BookingForm key={`${account.id}-${route.params.service}`} route={route} navigation={navigation} />;
+  return <BookingForm key={`${account.id}-${route.params.service}-${route.params.promotionContext??""}`} route={route} navigation={navigation} />;
 }
 function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, "ScheduleService">, "route" | "navigation">) {
   const { account } = useSession();
@@ -73,7 +74,7 @@ function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, 
       if (!selected) { setStep(1); throw Error("Selecione o endereço onde será a limpeza."); }
       if (!day) throw Error("Escolha no calendário o dia em que prefere receber a limpeza.");
       if (!time) throw Error("Selecione um horário de preferência para continuar.");
-      let result = await api.request<Booking>("agendamentos/", "POST", { servico: route.params.service, endereco: selected, inicio_solicitado: appointmentISO(day, time), observacoes: notes.trim(), chave: key.current });
+      let result = await api.request<Booking>("agendamentos/", "POST", { servico: route.params.service, endereco: selected, inicio_solicitado: appointmentISO(day, time), observacoes: bookingPromotionNotes(route.params.promotionContext,notes), chave: key.current });
       let failed=0;
       for(const photo of photos){try{result=await uploadBookingPhoto(result.id,photo);}catch{failed++;}}
       let notice=`Solicitação #${result.id} enviada. Aguarde a confirmação da loja.`;
@@ -87,7 +88,8 @@ function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, 
     <View accessibilityLabel={`Etapa ${step + 1} de 3`} style={{flexDirection:'row',gap:6}}>{[0,1,2].map(index=><View key={index} style={{flex:1,height:4,borderRadius:4,backgroundColor:index<=step?'#17624E':'#DCE4DC'}}/>)}</View>
     <Text accessibilityRole="header" style={styles.title}>{['O que vamos limpar?', 'Onde será a limpeza?', 'Qual o melhor dia?'][step]}</Text>
     {step === 0 && <View style={{gap:16}}>
-      <Field label="O que você quer limpar?" placeholder="Ex.: 1 sofá de 3 lugares e 2 cadeiras" value={notes} onChangeText={setNotes} multiline maxLength={5000} editable={!busy}/>
+      {!!route.params.promotionContext&&<View style={styles.card}><Text style={styles.label}>{route.params.promotionContext}</Text></View>}
+      <Field label="O que você quer limpar?" placeholder="Ex.: 1 sofá de 3 lugares e 2 cadeiras" value={notes} onChangeText={setNotes} multiline maxLength={5000-(route.params.promotionContext?.slice(0,1200).length??0)-2} editable={!busy}/>
       <DraftBookingPhotos photos={photos} onChange={setPhotos} busy={busy}/>
     </View>}
     {step === 1 && <View style={{gap:12}}>
@@ -109,7 +111,7 @@ function BookingForm({ route, navigation }: Pick<NativeStackScreenProps<Routes, 
       <ScheduleFields day={day} time={time} setDay={setDay} setTime={setTime} busy={busy}/>
       <View style={styles.card}>
         <Text style={styles.label}>Seu pedido de atendimento</Text>
-        <Text style={styles.small}>{notes}</Text>
+        <Text style={styles.small}>{bookingPromotionNotes(route.params.promotionContext,notes)}</Text>
         <Text style={styles.small}>{photos.length ? `${photos.length} foto(s) anexada(s)` : 'Sem fotos'}</Text>
         {list.filter(a=>a.id===selected).map(a=><Text key={a.id} style={styles.small}>{a.condominio} • Bloco {a.bloco} • Apto {a.apartamento}</Text>)}
       </View>

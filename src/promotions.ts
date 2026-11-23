@@ -10,3 +10,10 @@ export function promotionDate(value:string):string {
  return `${year}-${month}-${day}`;
 }
 export function promotionExpiry(value:string):string {return value.split('-').reverse().join('/');}
+
+export function promotionContext(p: Promotion): string {
+ return [`Promoção solicitada: ${p.titulo}`,p.descricao.trim()?`Condições da promoção: ${p.descricao.trim()}`:''].filter(Boolean).join('\n').slice(0,1200);
+}
+export function bookingPromotionNotes(context: string | undefined, notes: string): string {
+ return [context?.slice(0,1200),notes.trim()].filter(Boolean).join('\n\n');
+}

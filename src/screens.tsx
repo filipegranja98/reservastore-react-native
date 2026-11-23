@@ -1,3 +1,5 @@
+import {promotionContext,type Promotion} from "./promotions";
+import {orderWhatsAppLink} from "./whatsappMessages";
 import {StorePromotions} from "./PromotionScreens";
 import { StoreLogo } from "./StoreLogo";
 import { PasswordField } from "./PasswordField";
@@ -18,6 +20,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Linking,
   Pressable,
   ScrollView,
   Text,
@@ -53,7 +56,7 @@ type ReturnTo = {
   name: string;
 };
 export type Routes = {
-  ScheduleService: { shop: number; name: string; service: number; serviceName: string; price: string };
+  ScheduleService: { shop: number; name: string; service: number; serviceName: string; price: string; promotionContext?: string };
   Appointments: { notice?: string } | undefined;
   Shops: undefined;
   Shop: { id: number; name: string };
@@ -235,6 +238,16 @@ export function ShopScreen({ route, navigation }: Props<"Shop">) {
       };
     }, [id, attempt]),
   );
+  async function requestPromotion(p:Promotion){
+    if(!shop)return;
+    if(!account){navigation.navigate("Login",{notice:"Entre para solicitar esta promoção. Depois, toque na promoção novamente.",returnTo:{screen:"Shop",id,name:shop.nome}});return;}
+    if(p.produto){await cart.add(p.produto);return;}
+    try{
+      const url=orderWhatsAppLink(shop.whatsapp,`Olá! Quero solicitar a promoção “${p.titulo}” da ${shop.nome}.\n${p.descricao}\nPodemos combinar os detalhes?`);
+      if(!url)throw Error("A loja ainda não cadastrou o WhatsApp para contato.");
+      if(Platform.OS==='web'&&typeof window!=='undefined')window.location.assign(url);else await Linking.openURL(url);
+    }catch(e){setDetailError((e as Error).message);}
+  }
   if (loading)
     return (
       <View style={[styles.screen, styles.content]}>
@@ -272,7 +285,8 @@ export function ShopScreen({ route, navigation }: Props<"Shop">) {
             <View style={{ gap: 18, marginBottom: 18 }}>
               <StoreHeading name={shop.nome} logo={shop.logo} />
               <StoreStatus shop={shop} />
-              <StorePromotions shop={id} attempt={attempt}/>
+              <StorePromotions shop={id} attempt={attempt} services={services} canSchedule={!!account} busy={cart.busy} disabled={merchant||(!services&&!operating.canOrder)||(!services&&!!account&&(cart.needsReload||cart.pendingCheckout))} onRequest={p=>void requestPromotion(p)} onService={(p,item)=>navigation.navigate("ScheduleService",{shop:id,name:shop.nome,service:item.id,serviceName:item.nome,price:item.preco,promotionContext:promotionContext(p)})}/>
+              {!!detailError&&<Notice message={detailError}/>}
               {!!cart.error && (
                 <Notice message={cart.error} retry={() => void cart.reload()} />
               )}
